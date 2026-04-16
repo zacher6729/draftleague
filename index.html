@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NFL Draft Prediction League</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Bebas+Neue&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0a0d12;--surface:#13181f;--surface2:#1c2330;--border:#2a3244;
+    --accent:#00a8ff;--accent2:#ff4d00;--text:#e8edf5;--muted:#7a8ba8;
+    --green:#22c55e;--red:#ef4444;--amber:#f59e0b;
+  }
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+  .app{max-width:700px;margin:0 auto;padding:1rem}
+  
+  /* Header */
+  .header{display:flex;align-items:center;gap:12px;padding:16px 0 20px;border-bottom:1px solid var(--border);margin-bottom:20px}
+  .header-icon{font-size:32px;line-height:1}
+  .header-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--accent)}
+  .header-sub{font-size:12px;color:var(--muted);margin-top:2px}
+  
+  /* Cards */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:12px}
+  .card-title{font-size:15px;font-weight:600;margin-bottom:14px;color:var(--text)}
+  
+  /* Buttons */
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:14px;font-family:'Inter',sans-serif;cursor:pointer;transition:all 0.15s;font-weight:500}
+  .btn:hover{background:var(--surface2);border-color:var(--accent)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#000}
+  .btn.primary:hover{background:#0090d9}
+  .btn.danger{background:var(--red);border-color:var(--red);color:#fff}
+  .btn.full{width:100%;justify-content:center}
+  .btn.sm{padding:5px 10px;font-size:12px}
+  
+  /* Forms */
+  input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-size:14px;font-family:'Inter',sans-serif;margin-bottom:10px;outline:none;transition:border-color 0.15s}
+  input:focus,select:focus{border-color:var(--accent)}
+  select option{background:var(--surface2);color:var(--text)}
+  label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
+  
+  /* Badges */
+  .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+  .badge-blue{background:rgba(0,168,255,0.15);color:var(--accent);border:1px solid rgba(0,168,255,0.3)}
+  .badge-green{background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.3)}
+  .badge-amber{background:rgba(245,158,11,0.15);color:var(--amber);border:1px solid rgba(245,158,11,0.3)}
+  .badge-red{background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3)}
+  .badge-gray{background:rgba(122,139,168,0.15);color:var(--muted);border:1px solid rgba(122,139,168,0.3)}
+  
+  /* Metrics */
+  .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+  .metric{background:var(--surface2);border-radius:10px;padding:14px;text-align:center;border:1px solid var(--border)}
+  .metric .num{font-size:26px;font-weight:600;color:var(--accent)}
+  .metric .lbl{font-size:11px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:0.5px}
+  
+  /* Tabs */
+  .tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px}
+  .tab{padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all 0.15s}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  
+  /* Leaderboard */
+  .lb-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+  .lb-rank{font-size:14px;font-weight:600;min-width:32px;color:var(--muted)}
+  .lb-name{flex:1;font-size:14px;font-weight:500}
+  .lb-pts{font-size:16px;font-weight:600;color:var(--accent)}
+  
+  /* Nav */
+  .nav{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .back-btn{background:none;border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--muted);padding:6px 10px;font-size:16px;transition:all 0.15s}
+  .back-btn:hover{color:var(--text);border-color:var(--accent)}
+  
+  /* Pick rows */
+  .pick-row{display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:var(--surface2)}
+  .pick-row.correct{border-color:var(--green);background:rgba(34,197,94,0.08)}
+  .pick-row.wrong{border-color:var(--red);background:rgba(239,68,68,0.08)}
+  .slot-num{font-size:12px;font-weight:600;color:var(--muted);min-width:26px;text-align:center}
+  .type-toggle{display:flex;border-radius:6px;overflow:hidden;border:1px solid var(--border);flex-shrink:0}
+  .type-toggle button{padding:5px 9px;border:none;background:var(--surface);color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.15s;text-transform:uppercase;letter-spacing:0.3px}
+  .type-toggle button.active{background:var(--accent);color:#000}
+  
+  /* Info box */
+  .info-box{background:var(--surface2);border-left:3px solid var(--accent);padding:10px 14px;border-radius:0 8px 8px 0;font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5}
+  .info-box strong{color:var(--text)}
+  
+  /* Success/Error */
+  .success-msg{background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.3);padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px;font-weight:500}
+  .error-msg{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.3);padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px}
+  .error-inline{color:var(--red);font-size:12px;margin-top:-6px;margin-bottom:6px}
+  
+  /* Live badge */
+  .live-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:rgba(239,68,68,0.15);color:var(--red);border-radius:4px;font-size:12px;font-weight:600;border:1px solid rgba(239,68,68,0.3)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:pulse 1.2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+  
+  /* Divider */
+  .divider{border:none;border-top:1px solid var(--border);margin:14px 0}
+  
+  /* Code display */
+  .join-code{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:8px;color:var(--accent);text-align:center;padding:10px 0}
+  
+  /* Member list */
+  .member-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+  .avatar{width:36px;height:36px;border-radius:50%;background:rgba(0,168,255,0.15);border:1px solid rgba(0,168,255,0.3);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;color:var(--accent);flex-shrink:0;text-transform:uppercase}
+  
+  /* Draft results table */
+  .dr-row{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;align-items:center}
+  .dr-slot{min-width:30px;color:var(--muted);font-weight:600}
+  .dr-player{flex:1;font-weight:500}
+  
+  /* Screen transitions */
+  .screen{display:none}
+  .screen.active{display:block}
+  
+  /* Grid */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  
+  /* Scrollable */
+  .scroll-area{max-height:240px;overflow-y:auto;padding-right:4px}
+  .scroll-area::-webkit-scrollbar{width:4px}
+  .scroll-area::-webkit-scrollbar-track{background:var(--surface)}
+  .scroll-area::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-icon">🏈</div>
+    <div>
+      <div class="header-title">Draft Prediction League</div>
+      <div class="header-sub">2026 NFL Draft · First Round · Mel Kiper Big Board</div>
+    </div>
+    <div id="header-user" style="margin-left:auto;font-size:12px;color:var(--muted)"></div>
+  </div>
+  <div id="app-root"></div>
+</div>
+
+<script>
+const NFL_TEAMS = [
+  {key:'TEN',name:'Tennessee Titans'},{key:'CLE',name:'Cleveland Browns'},
+  {key:'NYG',name:'NY Giants'},{key:'NE',name:'New England Patriots'},
+  {key:'JAC',name:'Jacksonville Jaguars'},{key:'LV',name:'Las Vegas Raiders'},
+  {key:'NYJ',name:'NY Jets'},{key:'CAR',name:'Carolina Panthers'},
+  {key:'NO',name:'New Orleans Saints'},{key:'CHI',name:'Chicago Bears'},
+  {key:'SF',name:'San Francisco 49ers'},{key:'DAL',name:'Dallas Cowboys'},
+  {key:'MIA',name:'Miami Dolphins'},{key:'IND',name:'Indianapolis Colts'},
+  {key:'ATL',name:'Atlanta Falcons'},{key:'ARI',name:'Arizona Cardinals'},
+  {key:'CIN',name:'Cincinnati Bengals'},{key:'SEA',name:'Seattle Seahawks'},
+  {key:'TB',name:'Tampa Bay Buccaneers'},{key:'DEN',name:'Denver Broncos'},
+  {key:'PIT',name:'Pittsburgh Steelers'},{key:'LAC',name:'LA Chargers'},
+  {key:'GB',name:'Green Bay Packers'},{key:'MIN',name:'Minnesota Vikings'},
+  {key:'HOU',name:'Houston Texans'},{key:'LAR',name:'LA Rams'},
+  {key:'BAL',name:'Baltimore Ravens'},{key:'DET',name:'Detroit Lions'},
+  {key:'WAS',name:'Washington Commanders'},{key:'BUF',name:'Buffalo Bills'},
+  {key:'KC',name:'Kansas City Chiefs'},{key:'PHI',name:'Philadelphia Eagles'},
+];
+
+// Mel Kiper Jr.'s 2026 NFL Draft Big Board — top ~64 prospects (rounds 1–2)
+// Source: ESPN Big Board & two-round mock draft (April 2026)
+// Listed in Kiper's ranked order; displayed alphabetically in the UI
+const PROSPECTS = [
+  // Kiper's confirmed top 25 + round 2 prospects from his mock & positional rankings
+  // QBs
+  'Fernando Mendoza',   // #1 overall on Kiper board
+  'Ty Simpson',         // #2 QB
+  'Carson Beck',        // #3 QB
+  'Drew Allar',         // #4 QB
+  'Garrett Nussmeier',  // #5 QB
+  // RBs
+  'Jeremiyah Love',     // top RB, top-5 overall per Kiper
+  'Jadarian Price',     // RB2
+  'Kalel Mullings',     // RB3
+  // WRs
+  'Carnell Tate',       // WR1 per Kiper
+  'Makai Lemon',        // WR2
+  'Jordyn Tyson',       // WR3
+  'Denzel Boston',      // WR4
+  'K.C. Concepcion',    // WR5
+  'Zachariah Branch',   // WR6
+  'Omar Cooper Jr.',    // WR — round 2
+  'Germie Bernard',     // WR — round 2
+  'Malachi Fields',     // WR — round 2
+  // TEs
+  'Kenyon Sadiq',       // TE1 per Kiper
+  'Eli Stowers',        // TE2
+  'Max Klare',          // TE3
+  // OT
+  'Francis Mauigoa',    // OT1 per Kiper
+  'Spencer Fano',       // OT2
+  'Kadyn Proctor',      // OT3
+  'Monroe Freeling',    // OT4
+  // IOL / OG
+  'Olaivavega Ioane',   // OG1 per Kiper
+  'Emmanuel Pregnon',   // OG2
+  'Chase Bisontis',     // OG3
+  'Wyatt Milum',        // OG — round 2
+  'Connor Lew',         // C — round 2
+  'Keylan Rutledge',    // IOL — round 2
+  // EDGE
+  'David Bailey',       // EDGE1 per Kiper
+  'Arvell Reese',       // EDGE / LB hybrid, top-5 per Kiper
+  'Rueben Bain Jr.',    // EDGE2
+  'T.J. Parker',        // EDGE3
+  'Keldric Faulk',      // EDGE4
+  'Mike Green',         // EDGE — round 2 (Missouri transfer, Kiper riser)
+  'Princely Umanmielen',// EDGE — round 2
+  'Elijah Roberts',     // EDGE — round 2
+  // DT / DL
+  'Peter Woods',        // DT1 per Kiper
+  'Caleb Banks',        // DT2
+  'Akheem Mesidor',     // DT3
+  'Kayden McDonald',    // DT4
+  'R Mason Thomas',     // DT — round 2
+  // LB
+  'Sonny Styles',       // LB1 per Kiper
+  'C.J. Allen',         // LB2
+  'Anthony Hill Jr.',   // LB3
+  'Jacob Rodriguez',    // LB4
+  'Jihaad Campbell',    // LB — round 2
+  'Dasan McCullough',   // LB — round 2
+  // CB
+  'Mansoor Delane',     // CB1 per Kiper
+  'Jermod McCoy',       // CB2
+  'Colton Hood',        // CB3
+  'Avieon Terrell',     // CB4
+  'Brandon Cisse',      // CB5
+  'Chris Johnson',      // CB6
+  'Devin Sanchez',      // CB — round 2
+  'Azareye\'h Thomas',  // CB — round 2
+  // S
+  'Caleb Downs',        // S1, top-10 per Kiper
+  'Dillon Thieneman',   // S2
+  'Emmanuel McNeil-Warren', // S3
+  'Lathan Ransom',      // S4 — round 2
+  'Andrew Mukuba',      // S — round 2
+].sort((a,b)=>a.replace(/[^a-z]/gi,'').localeCompare(b.replace(/[^a-z]/gi,'')));
+
+function randId(){return Math.random().toString(36).slice(2,9)}
+function initials(name){return name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
+
+let S = null;
+try{S=JSON.parse(localStorage.getItem('nfl_draft_league_v2')||'null')}catch{}
+if(!S) S={leagues:{},myId:randId(),myName:'',currentLeague:null};
+if(!S.myId) S.myId=randId();
+
+function save(){try{localStorage.setItem('nfl_draft_league_v2',JSON.stringify(S))}catch{}}
+
+const root = document.getElementById('app-root');
+let currentScreen = 'home';
+
+function render(){
+  document.getElementById('header-user').textContent = S.myName ? '👤 '+S.myName : '';
+  root.innerHTML = '';
+  const screens = {home,createLeague,joinLeague,leagueHome,makePicks};
+  const fn = screens[currentScreen] || home;
+  root.appendChild(fn());
+}
+
+function go(screen){currentScreen=screen;render()}
+
+// ─── HOME ───────────────────────────────────────────────────────────────────
+function home(){
+  const div = mkDiv('screen active');
+
+  if(!S.myName){
+    div.innerHTML = `
+      <div class="card">
+        <div class="card-title">Welcome! What's your name?</div>
+        <label>Your name</label>
+        <input id="onboard-name" placeholder="e.g. Alex Johnson" />
+        <div id="onboard-err" class="error-inline"></div>
+        <button class="btn primary full" id="onboard-btn">Get started →</button>
+      </div>
+    `;
+    setTimeout(()=>{
+      qs('#onboard-btn').onclick=()=>{
+        const n=qs('#onboard-name').value.trim();
+        if(!n){qs('#onboard-err').textContent='Enter your name';return}
+        S.myName=n;save();render();
+      };
+      qs('#onboard-name').onkeydown=e=>{if(e.key==='Enter')qs('#onboard-btn').click()};
+    },0);
+    return div;
+  }
+
+  const my = Object.values(S.leagues).filter(l=>l.members.some(m=>m.id===S.myId));
+
+  div.innerHTML = `
+    <div class="grid2" style="margin-bottom:16px">
+      <button class="btn primary full" id="create-btn">+ Create league</button>
+      <button class="btn full" id="join-btn">Join with code</button>
+    </div>
+    ${my.length===0
+      ? `<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">
+           <div style="font-size:40px;margin-bottom:12px">🏆</div>
+           <div>Create a league and invite friends to predict the 2026 NFL Draft!</div>
+         </div>`
+      : `<div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Your leagues</div>
+         ${my.map(l=>{
+           const me=l.members.find(m=>m.id===S.myId);
+           const hasPicks=me&&me.picks&&me.picks.length===32;
+           const isAdmin=l.adminId===S.myId;
+           return `<div class="card league-card" data-id="${l.id}" style="cursor:pointer">
+             <div style="display:flex;justify-content:space-between;align-items:flex-start">
+               <div>
+                 <div style="font-size:16px;font-weight:600;margin-bottom:4px">${l.name}</div>
+                 <div style="font-size:12px;color:var(--muted)">${l.members.length} member${l.members.length!==1?'s':''}</div>
+               </div>
+               <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+                 ${isAdmin?'<span class="badge badge-blue">Admin</span>':''}
+                 ${hasPicks?'<span class="badge badge-green">Picks in ✓</span>':'<span class="badge badge-amber">Picks needed</span>'}
+                 ${l.draftStarted?'<span class="badge badge-red">Live</span>':''}
+               </div>
+             </div>
+             <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+               <div style="font-size:12px;color:var(--muted)">Code: <span style="color:var(--accent);font-weight:600;letter-spacing:2px">${l.joinCode}</span></div>
+               <div style="font-size:12px;color:var(--muted)">${l.members.filter(m=>m.picks&&m.picks.length===32).length}/${l.members.length} picks submitted</div>
+             </div>
+           </div>`;
+         }).join('')}`
+    }
+  `;
+
+  setTimeout(()=>{
+    qs('#create-btn').onclick=()=>go('createLeague');
+    qs('#join-btn').onclick=()=>go('joinLeague');
+    qsa('.league-card').forEach(c=>c.onclick=()=>{S.currentLeague=c.dataset.id;go('leagueHome')});
+  },0);
+  return div;
+}
+
+// ─── CREATE LEAGUE ───────────────────────────────────────────────────────────
+function createLeague(){
+  const div = mkDiv('screen active');
+  div.innerHTML = `
+    <div class="nav"><button class="back-btn" id="back">&#8592;</button><h2 style="font-size:18px;font-weight:600">Create a league</h2></div>
+    <div class="card">
+      <div class="card-title">League details</div>
+      <label>League name</label>
+      <input id="l-name" placeholder="e.g. The Draft Room" />
+      <div id="l-err" class="error-inline"></div>
+      <button class="btn primary full" id="l-create">Create league →</button>
+    </div>
+    <div class="info-box">After creating, share the <strong>join code</strong> with friends via text or email. They enter it on the home screen to join.</div>
+  `;
+  setTimeout(()=>{
+    qs('#back').onclick=()=>go('home');
+    qs('#l-create').onclick=()=>{
+      const name=qs('#l-name').value.trim();
+      if(!name){qs('#l-err').textContent='Enter a name';return}
+      const id=randId(),code=Math.random().toString(36).slice(2,7).toUpperCase();
+      S.leagues[id]={id,name,joinCode:code,adminId:S.myId,
+        members:[{id:S.myId,name:S.myName,picks:[],score:0}],
+        invites:[],draftStarted:false,draftResults:{},createdAt:Date.now()};
+      S.currentLeague=id;save();go('leagueHome');
+    };
+    qs('#l-name').onkeydown=e=>{if(e.key==='Enter')qs('#l-create').click()};
+  },0);
+  return div;
+}
+
+// ─── JOIN LEAGUE ─────────────────────────────────────────────────────────────
+function joinLeague(){
+  const div = mkDiv('screen active');
+  div.innerHTML = `
+    <div class="nav"><button class="back-btn" id="back">&#8592;</button><h2 style="font-size:18px;font-weight:600">Join a league</h2></div>
+    <div class="card">
+      <label>Join code</label>
+      <input id="j-code" placeholder="Enter code" maxlength="5" style="text-transform:uppercase;letter-spacing:4px;font-size:22px;text-align:center;font-weight:600" />
+      <div id="j-err" class="error-inline"></div>
+      <button class="btn primary full" id="j-join">Join league →</button>
+    </div>
+  `;
+  setTimeout(()=>{
+    qs('#back').onclick=()=>go('home');
+    qs('#j-code').oninput=e=>{e.target.value=e.target.value.toUpperCase()};
+    qs('#j-join').onclick=()=>{
+      const code=qs('#j-code').value.trim().toUpperCase();
+      const league=Object.values(S.leagues).find(l=>l.joinCode===code);
+      if(!league){qs('#j-err').textContent='League not found. Check the code.';return}
+      if(league.draftStarted){qs('#j-err').textContent='Draft has started. Cannot join now.';return}
+      if(!league.members.some(m=>m.id===S.myId)){
+        league.members.push({id:S.myId,name:S.myName,picks:[],score:0});
+      }
+      S.currentLeague=league.id;save();go('leagueHome');
+    };
+  },0);
+  return div;
+}
+
+// ─── LEAGUE HOME ─────────────────────────────────────────────────────────────
+function leagueHome(){
+  const league=S.leagues[S.currentLeague];
+  if(!league){go('home');return mkDiv()}
+  const me=league.members.find(m=>m.id===S.myId);
+  const hasPicks=me&&me.picks&&me.picks.length===32;
+  const isAdmin=league.adminId===S.myId;
+  const resultsCount=Object.keys(league.draftResults||{}).length;
+
+  const div = mkDiv('screen active');
+  div.innerHTML = `
+    <div class="nav">
+      <button class="back-btn" id="back">&#8592;</button>
+      <div style="flex:1">
+        <div style="font-size:18px;font-weight:600">${league.name}</div>
+        <div style="font-size:12px;color:var(--muted)">Code: <span style="color:var(--accent);letter-spacing:2px;font-weight:600">${league.joinCode}</span></div>
+      </div>
+      ${league.draftStarted?'<span class="live-badge"><span class="dot"></span> LIVE</span>':''}
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="num">${league.members.length}</div><div class="lbl">Members</div></div>
+      <div class="metric"><div class="num">${league.members.filter(m=>m.picks&&m.picks.length===32).length}</div><div class="lbl">Picks in</div></div>
+      <div class="metric"><div class="num">${resultsCount}/32</div><div class="lbl">Drafted</div></div>
+    </div>
+    ${!hasPicks&&!league.draftStarted
+      ? `<div class="card" style="border-color:var(--accent)">
+           <div class="card-title">⚡ Submit your picks</div>
+           <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Select one player per slot before the draft starts. Lock in your predictions!</div>
+           <button class="btn primary full" id="picks-btn">Make my 32 picks →</button>
+         </div>`
+      : hasPicks
+        ? `<div class="success-msg">✓ Your picks are locked in (32/32 submitted)${!league.draftStarted?' — Edit until draft starts':''}</div>
+           ${!league.draftStarted?'<button class="btn full" id="picks-btn" style="margin-bottom:12px">Edit picks</button>':''}`
+        : ''
+    }
+    <div class="tabs">
+      <div class="tab active" data-tab="leaderboard">Leaderboard</div>
+      <div class="tab" data-tab="members">Members</div>
+      <div class="tab" data-tab="invite">Invite</div>
+      ${isAdmin?'<div class="tab" data-tab="admin">Admin</div>':''}
+    </div>
+    <div id="tab-content"></div>
+  `;
+
+  function showTab(t){
+    qsa('.tab',div).forEach(x=>x.classList.toggle('active',x.dataset.tab===t));
+    const tc=qs('#tab-content',div);
+    if(t==='leaderboard') showLeaderboard(tc,league);
+    else if(t==='members') showMembers(tc,league);
+    else if(t==='invite') showInvite(tc,league);
+    else if(t==='admin') showAdmin(tc,league);
+  }
+
+  setTimeout(()=>{
+    qs('#back').onclick=()=>go('home');
+    const pb=qs('#picks-btn',div);
+    if(pb) pb.onclick=()=>go('makePicks');
+    qsa('.tab',div).forEach(tab=>tab.onclick=()=>showTab(tab.dataset.tab));
+    showTab('leaderboard');
+  },0);
+  return div;
+}
+
+function showLeaderboard(tc,league){
+  const sorted=[...league.members].sort((a,b)=>(b.score||0)-(a.score||0));
+  const medals=['🥇','🥈','🥉'];
+  let expandedId = null;
+
+  const render = ()=>{
+    tc.innerHTML='';
+
+    // Summary rows
+    const listDiv = document.createElement('div');
+    sorted.forEach((m,i)=>{
+      const isExpanded = league.draftStarted && expandedId===m.id;
+
+      // Header row
+      const row = document.createElement('div');
+      row.style.cssText='border-bottom:1px solid var(--border)';
+
+      const header = document.createElement('div');
+      header.className='lb-row';
+      header.style.cssText='cursor:'+(league.draftStarted&&m.picks&&m.picks.length?'pointer':'default')+';user-select:none;border-bottom:none';
+      header.innerHTML=`
+        <div class="lb-rank">${medals[i]||i+1}</div>
+        <div class="lb-name">
+          ${m.name}
+          ${m.id===S.myId?'<span style="font-size:11px;color:var(--accent)"> (you)</span>':''}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${!league.draftStarted
+            ? `<span class="${m.picks&&m.picks.length===32?'badge badge-green':'badge badge-amber'}">${m.picks&&m.picks.length===32?'Ready':'Pending'}</span>`
+            : `<span class="lb-pts">${m.score||0} pt${m.score!==1?'s':''}</span>`
+          }
+          ${league.draftStarted&&m.picks&&m.picks.length
+            ? `<span style="font-size:16px;color:var(--muted);transition:transform 0.2s;display:inline-block;transform:rotate(${isExpanded?'90':'0'}deg)">›</span>`
+            : ''
+          }
+        </div>
+      `;
+
+      if(league.draftStarted && m.picks && m.picks.length){
+        header.onclick=()=>{
+          expandedId = isExpanded ? null : m.id;
+          render();
+        };
+      }
+
+      row.appendChild(header);
+
+      // Expanded picks panel
+      if(isExpanded){
+        const panel = document.createElement('div');
+        panel.style.cssText='padding:0 0 12px 0;animation:fadeIn 0.15s ease';
+
+        const correct = m.picks.filter(p=>isPickCorrect(p,league.draftResults)===true).length;
+        const wrong   = m.picks.filter(p=>isPickCorrect(p,league.draftResults)===false).length;
+        const pending = m.picks.filter(p=>isPickCorrect(p,league.draftResults)===null).length;
+
+        panel.innerHTML=`
+          <div style="display:flex;gap:10px;margin-bottom:10px;padding:8px 0 8px 32px">
+            <span style="font-size:12px;color:var(--green);font-weight:600">✓ ${correct} correct</span>
+            <span style="font-size:12px;color:var(--red);font-weight:600">✗ ${wrong} wrong</span>
+            <span style="font-size:12px;color:var(--muted)">· ${pending} pending</span>
+          </div>
+        `;
+
+        const picksGrid = document.createElement('div');
+        picksGrid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:0 0 0 0';
+
+        m.picks.forEach(p=>{
+          const result = isPickCorrect(p, league.draftResults);
+          const label  = p.type==='slot' ? `Pick #${p.slot}` : `${p.team}`;
+          const bg     = result===true  ? 'rgba(34,197,94,0.1)'
+                       : result===false ? 'rgba(239,68,68,0.1)'
+                       : 'var(--surface2)';
+          const border = result===true  ? 'var(--green)'
+                       : result===false ? 'var(--red)'
+                       : 'var(--border)';
+          const mark   = result===true  ? '✓' : result===false ? '✗' : '·';
+          const markColor = result===true ? 'var(--green)' : result===false ? 'var(--red)' : 'var(--muted)';
+          const typeTag = p.type==='slot'
+            ? `<span style="font-size:9px;background:rgba(0,168,255,0.15);color:var(--accent);padding:1px 5px;border-radius:3px;font-weight:600">SLOT</span>`
+            : `<span style="font-size:9px;background:rgba(245,158,11,0.15);color:var(--amber);padding:1px 5px;border-radius:3px;font-weight:600">TEAM</span>`;
+
+          const cell = document.createElement('div');
+          cell.style.cssText=`background:${bg};border:1px solid ${border};border-radius:6px;padding:6px 8px;display:flex;flex-direction:column;gap:2px`;
+          cell.innerHTML=`
+            <div style="display:flex;align-items:center;gap:5px">
+              ${typeTag}
+              <span style="font-size:11px;color:var(--muted);font-weight:600">${label}</span>
+              <span style="margin-left:auto;font-size:13px;color:${markColor};font-weight:700">${mark}</span>
+            </div>
+            <div style="font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.player}</div>
+          `;
+          picksGrid.appendChild(cell);
+        });
+
+        panel.appendChild(picksGrid);
+        row.appendChild(panel);
+      }
+
+      listDiv.appendChild(row);
+    });
+
+    tc.appendChild(listDiv);
+
+    // Footer info
+    const footer = document.createElement('div');
+    if(!league.draftStarted){
+      footer.className='info-box';
+      footer.style.marginTop='12px';
+      footer.innerHTML='Scores and picks are revealed once the draft starts. Submit picks to get ready!';
+    } else {
+      const made = Object.keys(league.draftResults||{}).length;
+      if(made>0){
+        footer.className='info-box';
+        footer.style.marginTop='12px';
+        footer.innerHTML=`<strong>${made}/32</strong> picks recorded. Tap any member to see their full pick sheet.`;
+      }
+    }
+    tc.appendChild(footer);
+  };
+
+  // Inject keyframe if not already present
+  if(!document.getElementById('lb-anim')){
+    const s=document.createElement('style');
+    s.id='lb-anim';
+    s.textContent='@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}';
+    document.head.appendChild(s);
+  }
+
+  render();
+}
+
+function showMembers(tc,league){
+  tc.innerHTML = `
+    <div>
+      ${league.members.map(m=>`
+        <div class="member-row">
+          <div class="avatar">${initials(m.name)}</div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:500">${m.name} ${m.id===S.myId?'<span style="font-size:11px;color:var(--accent)">(you)</span>':''} ${m.id===league.adminId?'<span class="badge badge-blue" style="margin-left:4px">Admin</span>':''}</div>
+            ${m.contact?`<div style="font-size:12px;color:var(--muted)">${m.contact}</div>`:''}
+          </div>
+          <span class="${m.picks&&m.picks.length===32?'badge badge-green':'badge badge-amber'}">${m.picks&&m.picks.length===32?'✓ Picks in':'Pending'}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function showInvite(tc,league){
+  tc.innerHTML = `
+    <div class="card">
+      <div class="card-title">Share join code</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px;text-align:center">Send this code to friends — they enter it on the home screen</div>
+      <div class="join-code">${league.joinCode}</div>
+      <button class="btn full" id="copy-code" style="margin-top:8px">Copy code</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Send email invite</div>
+      <label>Email address</label>
+      <input id="inv-contact" placeholder="name@email.com" type="email" />
+      <label>Their name (optional)</label>
+      <input id="inv-name" placeholder="Friend's name" />
+      <button class="btn primary full" id="inv-send">Open email invite →</button>
+      <div id="inv-msg" style="margin-top:8px;font-size:13px;color:var(--muted)"></div>
+    </div>
+    ${league.invites&&league.invites.length
+      ? `<div style="font-size:12px;color:var(--muted);margin-top:8px">${league.invites.length} invite${league.invites.length!==1?'s':''} sent</div>`:''}
+  `;
+  qs('#copy-code',tc).onclick=()=>{
+    navigator.clipboard.writeText(league.joinCode).then(()=>{
+      qs('#copy-code',tc).textContent='Copied! ✓';
+      setTimeout(()=>{qs('#copy-code',tc).textContent='Copy code'},2000);
+    }).catch(()=>{
+      prompt('Copy this code:',league.joinCode);
+    });
+  };
+  qs('#inv-send',tc).onclick=()=>{
+    const contact=qs('#inv-contact',tc).value.trim();
+    const name=qs('#inv-name',tc).value.trim()||'there';
+    if(!contact){qs('#inv-msg',tc).textContent='Enter an email address';return}
+    if(!contact.includes('@')){qs('#inv-msg',tc).textContent='Please enter a valid email address';return}
+    const msg=`Hey ${name}! Join my NFL Draft Prediction League "${league.name}".\n\nUse join code: ${league.joinCode}\n\nPick the first 32 players before the draft starts. Good luck! 🏈`;
+    window.open(`mailto:${contact}?subject=Join my NFL Draft Prediction League!&body=${encodeURIComponent(msg)}`);
+    if(!league.invites) league.invites=[];
+    league.invites.push({contact,name,sentAt:Date.now()});save();
+    qs('#inv-msg',tc).textContent=`✓ Email invite opened for ${contact}`;
+    qs('#inv-contact',tc).value='';qs('#inv-name',tc).value='';
+  };
+}
+
+function showAdmin(tc,league){
+  const resultsCount=Object.keys(league.draftResults||{}).length;
+  tc.innerHTML = `
+    <div class="card">
+      <div class="card-title">Draft control</div>
+      ${!league.draftStarted
+        ? `<div style="font-size:13px;color:var(--muted);margin-bottom:12px">Starting the draft locks all picks. Members can no longer edit their selections.</div>
+           <button class="btn danger full" id="start-draft">Start draft & enable scoring</button>`
+        : `<div class="success-msg">Draft is live! Record picks below to update scores.</div>`
+      }
+    </div>
+    ${league.draftStarted?`
+    <div class="card">
+      <div class="card-title">Record a pick (${resultsCount}/32 done)</div>
+      <div class="grid2">
+        <div>
+          <label>Pick number</label>
+          <input type="number" id="a-slot" min="1" max="32" placeholder="#" style="margin-bottom:0" />
+        </div>
+        <div>
+          <label>Team</label>
+          <select id="a-team" style="margin-bottom:0">
+            <option value="">-- team --</option>
+            ${NFL_TEAMS.map(t=>`<option value="${t.key}">${t.key} — ${t.name}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <label>Player selected</label>
+        <select id="a-player">
+          <option value="">-- player --</option>
+          ${PROSPECTS.map(p=>`<option value="${p}">${p}</option>`).join('')}
+          <option value="__other__">✏ Write in player...</option>
+        </select>
+        <input id="a-player-other" placeholder="Player name" style="display:none" />
+      </div>
+      <button class="btn primary full" id="a-save" style="margin-top:4px">Record pick &amp; update scores →</button>
+      <div id="a-msg" style="margin-top:8px;font-size:13px"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Picks recorded</div>
+      <div class="scroll-area">
+        ${Object.entries(league.draftResults||{}).length===0
+          ? `<div style="color:var(--muted);font-size:13px">No picks yet</div>`
+          : Object.entries(league.draftResults||{}).sort((a,b)=>+a[0]-+b[0]).map(([slot,r])=>`
+            <div class="dr-row">
+              <span class="dr-slot">#${slot}</span>
+              <span class="dr-player">${r.player}</span>
+              <span class="badge badge-blue">${r.team}</span>
+              <button class="btn sm del-pick" data-slot="${slot}" style="border-color:var(--red);color:var(--red)">✕</button>
+            </div>
+          `).join('')
+        }
+      </div>
+    </div>
+    `:''}
+  `;
+  const startBtn=qs('#start-draft',tc);
+  if(startBtn) startBtn.onclick=()=>{
+    if(!confirm('Start the draft? All picks will be locked.')) return;
+    league.draftStarted=true;save();showAdmin(tc,league);
+  };
+  const playerSel=qs('#a-player',tc);
+  const playerOther=qs('#a-player-other',tc);
+  if(playerSel) playerSel.onchange=()=>{
+    if(playerOther) playerOther.style.display=playerSel.value==='__other__'?'block':'none';
+  };
+  const saveBtn=qs('#a-save',tc);
+  if(saveBtn) saveBtn.onclick=()=>{
+    const slot=parseInt((qs('#a-slot',tc)||{}).value)||0;
+    let player=(qs('#a-player',tc)||{}).value||'';
+    if(player==='__other__') player=((qs('#a-player-other',tc)||{}).value||'').trim();
+    const team=(qs('#a-team',tc)||{}).value||'';
+    const msg=qs('#a-msg',tc);
+    if(slot<1||slot>32){if(msg)msg.textContent='⚠ Enter a valid pick number (1-32)';return}
+    if(!player){if(msg)msg.textContent='⚠ Select a player';return}
+    if(!team){if(msg)msg.textContent='⚠ Select a team';return}
+    if(!league.draftResults) league.draftResults={};
+    league.draftResults[slot]={player,team};
+    recalcScores(league);save();
+    if(msg){msg.style.color='var(--green)';msg.textContent=`✓ Pick #${slot}: ${player} to ${team} recorded! Scores updated.`}
+    setTimeout(()=>showAdmin(tc,league),1000);
+  };
+  qsa('.del-pick',tc).forEach(btn=>btn.onclick=()=>{
+    const slot=btn.dataset.slot;
+    if(!confirm(`Remove pick #${slot}?`)) return;
+    delete league.draftResults[slot];
+    recalcScores(league);save();showAdmin(tc,league);
+  });
+}
+
+// ─── EXPERT MOCK DRAFTS (Round 1 slot picks, sourced April 2026) ──────────────
+// Each mock: array of 32 player names in slot order (index 0 = pick 1)
+const MOCK_DRAFTS = {
+  'Mel Kiper Jr. (ESPN)': {
+    desc: 'ESPN Senior Draft Analyst · Final 2-round mock, April 2026',
+    picks: [
+      'Fernando Mendoza','David Bailey','Jeremiyah Love','Arvell Reese','Caleb Downs',
+      'Makai Lemon','Carnell Tate','Sonny Styles','Mansoor Delane','Rueben Bain Jr.',
+      'Francis Mauigoa','Olaivavega Ioane','Peter Woods','Spencer Fano','Kenyon Sadiq',
+      'Jermod McCoy','Jordyn Tyson','Ty Simpson','Jadarian Price','Colton Hood',
+      'Avieon Terrell','Keldric Faulk','T.J. Parker','Kadyn Proctor','Caleb Banks',
+      'Emmanuel Pregnon','Anthony Hill Jr.','Dillon Thieneman','Monroe Freeling','Chase Bisontis',
+      'Kayden McDonald','Omar Cooper Jr.',
+    ]
+  },
+  'Daniel Jeremiah (NFL Network)': {
+    desc: 'NFL Network Draft Analyst · Mock Draft 3.0, March 2026',
+    picks: [
+      'Fernando Mendoza','David Bailey','Carnell Tate','Jeremiyah Love','Sonny Styles',
+      'Makai Lemon','Mansoor Delane','Caleb Downs','Rueben Bain Jr.','Francis Mauigoa',
+      'Jordyn Tyson','Spencer Fano','Peter Woods','Jermod McCoy','Olaivavega Ioane',
+      'T.J. Parker','Kenyon Sadiq','Arvell Reese','Ty Simpson','Colton Hood',
+      'Emmanuel Pregnon','Keldric Faulk','Anthony Hill Jr.','Jadarian Price','Caleb Banks',
+      'Chase Bisontis','Dillon Thieneman','Avieon Terrell','C.J. Allen','Monroe Freeling',
+      'Kayden McDonald','Omar Cooper Jr.',
+    ]
+  },
+  'Peter Schrager (NFL Network)': {
+    desc: 'NFL Network Insider · Round 1 Mock, April 2026',
+    picks: [
+      'Fernando Mendoza','David Bailey','Arvell Reese','Jeremiyah Love','Carnell Tate',
+      'Makai Lemon','Sonny Styles','Mansoor Delane','Caleb Downs','Rueben Bain Jr.',
+      'Francis Mauigoa','Kenyon Sadiq','Spencer Fano','Peter Woods','Jordyn Tyson',
+      'Jermod McCoy','Olaivavega Ioane','Ty Simpson','T.J. Parker','Colton Hood',
+      'Jadarian Price','Emmanuel Pregnon','Avieon Terrell','Caleb Banks','Anthony Hill Jr.',
+      'Keldric Faulk','Dillon Thieneman','Chase Bisontis','C.J. Allen','Monroe Freeling',
+      'Kayden McDonald','Omar Cooper Jr.',
+    ]
+  },
+  'Charlie Campbell (WalterFootball)': {
+    desc: 'WalterFootball.com · Mock Draft, April 16 2026',
+    picks: [
+      'Fernando Mendoza','David Bailey','Jeremiyah Love','Carnell Tate','Sonny Styles',
+      'Makai Lemon','Mansoor Delane','Arvell Reese','Caleb Downs','Rueben Bain Jr.',
+      'Francis Mauigoa','Kenyon Sadiq','Spencer Fano','Jermod McCoy','Jordyn Tyson',
+      'Ty Simpson','Peter Woods','Olaivavega Ioane','T.J. Parker','Colton Hood',
+      'Jadarian Price','Keldric Faulk','Emmanuel Pregnon','Anthony Hill Jr.','Caleb Banks',
+      'Avieon Terrell','Dillon Thieneman','Chase Bisontis','C.J. Allen','Monroe Freeling',
+      'Kayden McDonald','Omar Cooper Jr.',
+    ]
+  },
+  'Dane Brugler (The Athletic)': {
+    desc: 'The Athletic NFL Draft Analyst · Final Round 1 Mock, April 2026',
+    picks: [
+      'Fernando Mendoza','Arvell Reese','David Bailey','Jeremiyah Love','Carnell Tate',
+      'Caleb Downs','Sonny Styles','Mansoor Delane','Makai Lemon','Rueben Bain Jr.',
+      'Francis Mauigoa','Spencer Fano','Jordyn Tyson','Kenyon Sadiq','Peter Woods',
+      'Jermod McCoy','Ty Simpson','Olaivavega Ioane','Jadarian Price','Colton Hood',
+      'T.J. Parker','Emmanuel Pregnon','Avieon Terrell','Caleb Banks','Anthony Hill Jr.',
+      'Keldric Faulk','Dillon Thieneman','Chase Bisontis','Monroe Freeling','C.J. Allen',
+      'Kayden McDonald','Omar Cooper Jr.',
+    ]
+  },
+};
+
+// De-duplicate each mock (if a player appears twice due to data error, second is blanked)
+Object.values(MOCK_DRAFTS).forEach(m=>{
+  const seen={};
+  m.picks=m.picks.map(p=>{
+    if(!p||seen[p]) return '';
+    seen[p]=true; return p;
+  });
+  while(m.picks.length<32) m.picks.push('');
+  m.picks=m.picks.slice(0,32);
+});
+
+// ─── MAKE PICKS ───────────────────────────────────────────────────────────────
+function makePicks(){
+  const league=S.leagues[S.currentLeague];
+  if(!league){go('home');return mkDiv()}
+  const me=league.members.find(m=>m.id===S.myId);
+  
+  let picks = me.picks&&me.picks.length===32
+    ? JSON.parse(JSON.stringify(me.picks))
+    : Array.from({length:32},(_,i)=>({slot:i+1,type:'slot',player:'',team:''}));
+
+  const div = mkDiv('screen active');
+
+  const renderUI=()=>{
+    // Build set of already-used players for duplicate highlighting
+    const getUsedPlayers=(excludeIdx)=>{
+      const used={};
+      picks.forEach((p,i)=>{if(i!==excludeIdx&&p.player)used[p.player]=true});
+      return used;
+    };
+
+    div.innerHTML = `
+      <div class="nav">
+        <button class="back-btn" id="back">&#8592;</button>
+        <div style="flex:1">
+          <div style="font-size:18px;font-weight:600">My picks</div>
+          <div style="font-size:12px;color:var(--muted)">${picks.filter(p=>p.player).length}/32 filled</div>
+        </div>
+        <button class="btn" id="autofill-btn" style="margin-right:6px;font-size:13px">⚡ Auto-fill</button>
+        <button class="btn primary" id="save-picks">Save</button>
+      </div>
+      <div class="info-box">
+        <strong>Rules:</strong> Choose <strong>Slot #</strong> (predict pick number) or <strong>Team</strong> (predict which team selects them). Each slot # once only. Each player once only. Unlimited team picks. 1 pt per correct pick. Player list is Mel Kiper Jr.'s 2026 Big Board (Rounds 1–2). Use <em>Write-in</em> for anyone not listed.
+      </div>
+
+      <!-- Autofill modal overlay -->
+      <div id="autofill-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;display:none;align-items:flex-start;justify-content:center;padding:60px 16px 16px;overflow-y:auto">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;width:100%;max-width:500px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <div style="font-size:16px;font-weight:600">⚡ Auto-fill from expert mock</div>
+            <button id="modal-close" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:0 4px">×</button>
+          </div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.5">
+            Pick an expert's mock draft to auto-fill all 32 slot picks. You can edit any pick after. Team picks are not changed.
+          </div>
+          <div id="expert-list" style="display:flex;flex-direction:column;gap:8px">
+            ${Object.entries(MOCK_DRAFTS).map(([name,data])=>`
+              <button class="expert-pick-btn" data-expert="${name}" style="text-align:left;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:border-color 0.15s">
+                <div style="font-size:14px;font-weight:600;color:var(--text)">${name}</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:3px">${data.desc}</div>
+              </button>
+            `).join('')}
+          </div>
+          <div style="margin-top:14px;font-size:12px;color:var(--muted);text-align:center">Mock data sourced from public draft coverage · April 2026</div>
+        </div>
+      </div>
+
+      <div id="picks-list"></div>
+      <div id="picks-err" style="color:var(--red);font-size:13px;margin:8px 0;min-height:18px"></div>
+      <button class="btn primary full" id="save-picks-bottom">Save all picks →</button>
+      <div style="height:20px"></div>
+    `;
+
+    const list=qs('#picks-list',div);
+
+    picks.forEach((pick,i)=>{
+      const usedByOthers = getUsedPlayers(i);
+      const isDupe = pick.player && usedByOthers[pick.player];
+
+      const row=document.createElement('div');
+      row.className='pick-row' + (isDupe?' wrong':'');
+      row.style.flexWrap='wrap';
+      row.style.gap='6px';
+
+      // Row number
+      const slotLabel=document.createElement('span');
+      slotLabel.className='slot-num';
+      slotLabel.textContent=`${i+1}.`;
+      row.appendChild(slotLabel);
+
+      // Slot / Team toggle
+      const typeToggle=document.createElement('div');
+      typeToggle.className='type-toggle';
+      typeToggle.innerHTML=`
+        <button data-t="slot" class="${pick.type==='slot'?'active':''}">Slot #</button>
+        <button data-t="team" class="${pick.type==='team'?'active':''}">Team</button>
+      `;
+      typeToggle.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+        picks[i].type=b.dataset.t;
+        picks[i].team='';
+        renderUI();
+      });
+      row.appendChild(typeToggle);
+
+      // Slot selector or Team selector
+      if(pick.type==='slot'){
+        const slotSel=document.createElement('select');
+        slotSel.style.cssText='flex:0 0 90px;margin-bottom:0;font-size:12px';
+        slotSel.innerHTML=Array.from({length:32},(_,j)=>`<option value="${j+1}">Pick ${j+1}</option>`).join('');
+        slotSel.value=pick.slot||i+1;
+        slotSel.onchange=()=>{picks[i].slot=parseInt(slotSel.value);};
+        row.appendChild(slotSel);
+      } else {
+        const teamSel=document.createElement('select');
+        teamSel.style.cssText='flex:0 0 80px;margin-bottom:0;font-size:12px';
+        teamSel.innerHTML=`<option value="">Team</option>`+
+          NFL_TEAMS.map(t=>`<option value="${t.key}" ${pick.team===t.key?'selected':''}>${t.key}</option>`).join('');
+        teamSel.onchange=()=>{picks[i].team=teamSel.value;};
+        row.appendChild(teamSel);
+      }
+
+      // Player selector — dropdown + write-in toggle
+      const playerWrap=document.createElement('div');
+      playerWrap.style.cssText='flex:1;min-width:120px;display:flex;flex-direction:column;gap:4px';
+
+      const isWriteIn = pick._writein || (pick.player && !PROSPECTS.includes(pick.player));
+
+      if(!isWriteIn){
+        // Dropdown
+        const playerSel=document.createElement('select');
+        playerSel.style.cssText='width:100%;margin-bottom:0;font-size:12px;'+(isDupe?'border-color:var(--red)':'');
+        playerSel.innerHTML=`<option value="">-- player --</option>`+
+          PROSPECTS.map(p=>{
+            const taken = usedByOthers[p];
+            return `<option value="${p}" ${pick.player===p?'selected':''} ${taken?'style="color:#7a8ba8"':''}>
+              ${taken?'✕ ':''}${p}${taken?' (taken)':''}
+            </option>`;
+          }).join('')+
+          `<option value="__writein__">✏ Write in player...</option>`;
+        playerSel.onchange=()=>{
+          if(playerSel.value==='__writein__'){
+            picks[i].player='';
+            pick._writein=true;
+            renderUI();
+          } else {
+            picks[i].player=playerSel.value;
+            // re-render to update taken indicators on other rows
+            renderUI();
+          }
+        };
+        playerWrap.appendChild(playerSel);
+        if(isDupe){
+          const dupeMsg=document.createElement('div');
+          dupeMsg.style.cssText='font-size:11px;color:var(--red);';
+          dupeMsg.textContent='⚠ Already used in another row';
+          playerWrap.appendChild(dupeMsg);
+        }
+      } else {
+        // Write-in text input
+        const writeIn=document.createElement('input');
+        writeIn.type='text';
+        writeIn.placeholder='Type player name...';
+        writeIn.value=pick.player||'';
+        writeIn.style.cssText='width:100%;margin-bottom:0;font-size:12px;'+(isDupe?'border-color:var(--red)':'');
+        writeIn.oninput=()=>{
+          picks[i].player=writeIn.value;
+          // live dupe highlight on this input only — no full re-render while typing
+          const nowUsed=getUsedPlayers(i);
+          const val=writeIn.value.trim();
+          writeIn.style.borderColor=val&&nowUsed[val]?'var(--red)':'';
+        };
+        writeIn.onchange=()=>{
+          picks[i].player=writeIn.value.trim();
+          renderUI(); // re-render on committed change to refresh taken indicators
+        };
+        // Auto-focus if this is a freshly-opened write-in (empty player)
+        if(!pick.player) setTimeout(()=>writeIn.focus(),0);
+        playerWrap.appendChild(writeIn);
+
+        const backToList=document.createElement('button');
+        backToList.style.cssText='font-size:11px;background:none;border:none;color:var(--accent);cursor:pointer;text-align:left;padding:0;';
+        backToList.textContent='← Back to prospect list';
+        backToList.onclick=()=>{picks[i].player='';delete pick._writein;renderUI();};
+        playerWrap.appendChild(backToList);
+
+        if(isDupe){
+          const dupeMsg=document.createElement('div');
+          dupeMsg.style.cssText='font-size:11px;color:var(--red);';
+          dupeMsg.textContent='⚠ Already used in another row';
+          playerWrap.appendChild(dupeMsg);
+        }
+      }
+
+      row.appendChild(playerWrap);
+      list.appendChild(row);
+    });
+
+    const doSave=()=>{
+      const err=qs('#picks-err',div);
+      const usedP={},usedS={};
+      let valid=true,errMsg='';
+      for(let i=0;i<picks.length;i++){
+        const p=picks[i];
+        const playerName=(p.player||'').trim();
+        if(!playerName){errMsg=`Row ${i+1}: select or write in a player.`;valid=false;break}
+        if(p.type==='team'&&!p.team){errMsg=`Row ${i+1}: select a team, or switch to Slot # mode.`;valid=false;break}
+        if(usedP[playerName]){errMsg=`"${playerName}" is selected more than once. Each player can only appear once.`;valid=false;break}
+        usedP[playerName]=true;
+        if(p.type==='slot'){
+          if(usedS[p.slot]){errMsg=`Pick #${p.slot} is used more than once. Each slot # can only be used once.`;valid=false;break}
+          usedS[p.slot]=true;
+        }
+      }
+      if(!valid){err.textContent=errMsg;err.scrollIntoView({behavior:'smooth',block:'nearest'});return}
+      // Normalize player names
+      picks.forEach(p=>{p.player=(p.player||'').trim()});
+      me.picks=picks;save();go('leagueHome');
+    };
+
+    setTimeout(()=>{
+      qs('#back',div).onclick=()=>go('leagueHome');
+      const sp=qs('#save-picks',div);
+      const spb=qs('#save-picks-bottom',div);
+      if(sp) sp.onclick=doSave;
+      if(spb) spb.onclick=doSave;
+
+      // Autofill modal
+      const modal=qs('#autofill-modal',div);
+      const openModal=()=>{modal.style.display='flex'};
+      const closeModal=()=>{modal.style.display='none'};
+      qs('#autofill-btn',div).onclick=openModal;
+      qs('#modal-close',div).onclick=closeModal;
+      modal.onclick=(e)=>{if(e.target===modal)closeModal()};
+
+      // Hover effect on expert buttons
+      qsa('.expert-pick-btn',div).forEach(btn=>{
+        btn.onmouseenter=()=>{btn.style.borderColor='var(--accent)';btn.style.background='rgba(0,168,255,0.05)'};
+        btn.onmouseleave=()=>{btn.style.borderColor='var(--border)';btn.style.background='var(--surface2)'};
+        btn.onclick=()=>{
+          const expertName=btn.dataset.expert;
+          const mock=MOCK_DRAFTS[expertName];
+          if(!mock) return;
+
+          // Only overwrite slot-type rows; preserve team picks
+          // Fill all 32 slots from the mock, only updating 'slot' type picks
+          const usedPlayers=new Set();
+          // First pass — gather players already in team-picks (preserve them)
+          picks.forEach(p=>{if(p.type==='team'&&p.player)usedPlayers.add(p.player)});
+
+          let filled=0;
+          picks.forEach((p,i)=>{
+            if(p.type==='team') return; // never touch team picks
+            const player=mock.picks[i]||'';
+            // If this player is already used in a team pick, skip it
+            if(player&&usedPlayers.has(player)){
+              p.player=''; p.slot=i+1; delete p._writein;
+            } else {
+              p.player=player; p.slot=i+1; p.type='slot'; delete p._writein;
+              if(player){usedPlayers.add(player);filled++}
+            }
+          });
+
+          closeModal();
+          renderUI();
+
+          // Brief confirmation flash
+          const err=qs('#picks-err',div);
+          if(err){
+            err.style.color='var(--green)';
+            err.textContent=`✓ Auto-filled ${filled} picks from ${expertName}`;
+            setTimeout(()=>{if(err){err.style.color='var(--red)';err.textContent=''}},3000);
+          }
+        };
+      });
+    },0);
+  };
+
+  renderUI();
+  return div;
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function isPickCorrect(pick,results){
+  if(!results||!Object.keys(results).length) return null;
+  const norm=s=>(s||'').trim().toLowerCase();
+  if(pick.type==='slot'){
+    const r=results[pick.slot];
+    if(!r) return null;
+    return norm(r.player)===norm(pick.player);
+  } else {
+    if(!pick.team) return null;
+    const r=Object.values(results).find(x=>x.team===pick.team);
+    if(!r) return null;
+    return norm(r.player)===norm(pick.player);
+  }
+}
+function recalcScores(league){
+  league.members.forEach(m=>{
+    let score=0;
+    (m.picks||[]).forEach(p=>{const c=isPickCorrect(p,league.draftResults);if(c===true)score++});
+    m.score=score;
+  });
+}
+function mkDiv(cls=''){const d=document.createElement('div');if(cls)d.className=cls;return d}
+function qs(sel,ctx=document){return ctx.querySelector(sel)}
+function qsa(sel,ctx=document){return Array.from(ctx.querySelectorAll(sel))}
+
+render();
+</script>
+</body>
+</html>
