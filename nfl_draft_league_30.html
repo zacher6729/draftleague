@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NFL Draft Prediction League</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Bebas+Neue&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0d12;--surface:#13181f;--surface2:#1c2330;--border:#2a3244;
+  --accent:#00a8ff;--text:#e8edf5;--muted:#7a8ba8;
+  --green:#22c55e;--red:#ef4444;--amber:#f59e0b;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.app{max-width:700px;margin:0 auto;padding:1rem}
+.header{display:flex;align-items:center;gap:12px;padding:16px 0 20px;border-bottom:1px solid var(--border);margin-bottom:20px}
+.header-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--accent)}
+.header-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:12px}
+.card-title{font-size:15px;font-weight:600;margin-bottom:14px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:14px;font-family:'Inter',sans-serif;cursor:pointer;transition:all 0.15s;font-weight:500}
+.btn:hover{background:var(--surface2);border-color:var(--accent)}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#000}
+.btn.primary:hover{background:#0090d9}
+.btn.danger{background:var(--red);border-color:var(--red);color:#fff}
+.btn.full{width:100%;justify-content:center}
+.btn.sm{padding:5px 10px;font-size:12px}
+input,select{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);font-size:14px;font-family:'Inter',sans-serif;margin-bottom:10px;outline:none;transition:border-color 0.15s}
+input:focus,select:focus{border-color:var(--accent)}
+select option{background:var(--surface2);color:var(--text)}
+label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px;font-weight:500;text-transform:uppercase;letter-spacing:0.5px}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+.badge-blue{background:rgba(0,168,255,0.15);color:var(--accent);border:1px solid rgba(0,168,255,0.3)}
+.badge-green{background:rgba(34,197,94,0.15);color:var(--green);border:1px solid rgba(34,197,94,0.3)}
+.badge-amber{background:rgba(245,158,11,0.15);color:var(--amber);border:1px solid rgba(245,158,11,0.3)}
+.badge-red{background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3)}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.metric{background:var(--surface2);border-radius:10px;padding:14px;text-align:center;border:1px solid var(--border)}
+.metric .num{font-size:26px;font-weight:600;color:var(--accent)}
+.metric .lbl{font-size:11px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:0.5px}
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:16px}
+.tab{padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all 0.15s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.lb-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+.lb-row:hover{background:rgba(255,255,255,0.02)}
+.lb-rank{font-size:14px;font-weight:600;min-width:32px;color:var(--muted)}
+.lb-name{flex:1;font-size:14px;font-weight:500}
+.lb-pts{font-size:16px;font-weight:600;color:var(--accent)}
+.nav{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.back-btn{background:none;border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--muted);padding:6px 10px;font-size:16px;transition:all 0.15s}
+.back-btn:hover{color:var(--text);border-color:var(--accent)}
+.pick-row{display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:var(--surface2);flex-wrap:wrap}
+.pick-row.wrong{border-color:var(--red);background:rgba(239,68,68,0.08)}
+.pick-row.correct{border-color:var(--green);background:rgba(34,197,94,0.08)}
+.slot-num{font-size:12px;font-weight:600;color:var(--muted);min-width:26px;text-align:center}
+.type-toggle{display:flex;border-radius:6px;overflow:hidden;border:1px solid var(--border);flex-shrink:0}
+.type-toggle button{padding:5px 9px;border:none;background:var(--surface);color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.15s;text-transform:uppercase}
+.type-toggle button.active{background:var(--accent);color:#000}
+.info-box{background:var(--surface2);border-left:3px solid var(--accent);padding:10px 14px;border-radius:0 8px 8px 0;font-size:13px;color:var(--muted);margin-bottom:14px;line-height:1.5}
+.info-box strong{color:var(--text)}
+.success-msg{background:rgba(34,197,94,0.1);color:var(--green);border:1px solid rgba(34,197,94,0.3);padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px;font-weight:500}
+.error-msg{background:rgba(239,68,68,0.1);color:var(--red);border:1px solid rgba(239,68,68,0.3);padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px}
+.live-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:rgba(239,68,68,0.15);color:var(--red);border-radius:4px;font-size:12px;font-weight:600;border:1px solid rgba(239,68,68,0.3)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.member-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+.avatar{width:36px;height:36px;border-radius:50%;background:rgba(0,168,255,0.15);border:1px solid rgba(0,168,255,0.3);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;color:var(--accent);flex-shrink:0;text-transform:uppercase}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.scroll-area{max-height:240px;overflow-y:auto}
+.join-code{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:8px;color:var(--accent);text-align:center;padding:10px 0}
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999}
+@media(max-width:480px){
+  .app{padding:0.5rem}
+  .header{padding:12px 0 14px}
+  .header-title{font-size:22px}
+  .metrics{grid-template-columns:repeat(3,1fr);gap:6px}
+  .metric{padding:10px 6px}
+  .metric .num{font-size:20px}
+  .metric .lbl{font-size:10px}
+  .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tab{padding:10px 12px;font-size:12px;white-space:nowrap}
+  .card{padding:14px}
+  .btn{padding:8px 14px;font-size:13px}
+  .grid2{grid-template-columns:1fr 1fr}
+  .lb-row{gap:8px}
+  .lb-name{font-size:13px}
+  .nav h2{font-size:16px}
+}
+</style>
+</head>
+<body>
+
+<div id="loading-screen">
+  <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:3px;color:var(--accent)">🏈 Draft League</div>
+  <div class="spinner" style="width:28px;height:28px;border-color:rgba(0,168,255,0.3);border-top-color:var(--accent)"></div>
+</div>
+
+<div class="app" style="display:none" id="main-app">
+  <div class="header">
+    <div style="font-size:32px">🏈</div>
+    <div>
+      <div class="header-title">Draft Prediction League</div>
+      <div class="header-sub">2026 NFL Draft · First Round</div>
+    </div>
+    <div id="header-user" style="margin-left:auto;font-size:12px;color:var(--muted);text-align:right"></div>
+  </div>
+  <div id="app-root"></div>
+</div>
+
+<script>
+// ── Supabase ────────────────────────────────────────────────
+const SUPA_URL = 'https://qdkhfdlrvtlurlqokqfi.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFka2hmZGxydnRsdXJscW9rcWZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNjk1NTIsImV4cCI6MjA5MTk0NTU1Mn0.XSarUk2y1prqxxXLoTm2IzFKjgoCl446FkSlqhAj3Kw';
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ── State ───────────────────────────────────────────────────
+let currentUser = null;   // auth user
+let currentProfile = null; // profiles row
+let currentLeagueId = null;
+let currentScreen = 'home';
+let realtimeSub = null;
+
+// ── Constants ───────────────────────────────────────────────
+// Official 2026 Round 1 order — one entry per pick slot (some teams appear twice via trades)
+const DRAFT_SLOTS = [
+  {pick:1,  key:'LV', name:'Las Vegas Raiders'},
+  {pick:2,  key:'NYJ',name:'NY Jets'},
+  {pick:3,  key:'ARI',name:'Arizona Cardinals'},
+  {pick:4,  key:'TEN',name:'Tennessee Titans'},
+  {pick:5,  key:'NYG',name:'NY Giants'},
+  {pick:6,  key:'CLE',name:'Cleveland Browns'},
+  {pick:7,  key:'WAS',name:'Washington Commanders'},
+  {pick:8,  key:'NO', name:'New Orleans Saints'},
+  {pick:9,  key:'KC', name:'Kansas City Chiefs'},
+  {pick:10, key:'CIN',name:'Cincinnati Bengals'},
+  {pick:11, key:'MIA',name:'Miami Dolphins'},
+  {pick:12, key:'DAL',name:'Dallas Cowboys'},
+  {pick:13, key:'LAR',name:'LA Rams'},
+  {pick:14, key:'BAL',name:'Baltimore Ravens'},
+  {pick:15, key:'TB', name:'Tampa Bay Buccaneers'},
+  {pick:16, key:'NYJ',name:'NY Jets'},
+  {pick:17, key:'DET',name:'Detroit Lions'},
+  {pick:18, key:'MIN',name:'Minnesota Vikings'},
+  {pick:19, key:'CAR',name:'Carolina Panthers'},
+  {pick:20, key:'DAL',name:'Dallas Cowboys'},
+  {pick:21, key:'PIT',name:'Pittsburgh Steelers'},
+  {pick:22, key:'LAC',name:'LA Chargers'},
+  {pick:23, key:'PHI',name:'Philadelphia Eagles'},
+  {pick:24, key:'CLE',name:'Cleveland Browns'},
+  {pick:25, key:'CHI',name:'Chicago Bears'},
+  {pick:26, key:'BUF',name:'Buffalo Bills'},
+  {pick:27, key:'SF', name:'San Francisco 49ers'},
+  {pick:28, key:'HOU',name:'Houston Texans'},
+  {pick:29, key:'KC', name:'Kansas City Chiefs'},
+  {pick:30, key:'MIA',name:'Miami Dolphins'},
+  {pick:31, key:'NE', name:'New England Patriots'},
+  {pick:32, key:'SEA',name:'Seattle Seahawks'},
+];
+
+// For admin pick recording — full slot list
+const NFL_TEAMS = DRAFT_SLOTS;
+
+// For the team picker dropdown in picks screen:
+// One entry per unique team, sorted by earliest pick number.
+// Teams with no pick this round appended alphabetically.
+const ALL_NFL_TEAMS_SORTED = (()=>{
+  const seen = new Set();
+  const withPick = [];
+  DRAFT_SLOTS.forEach(s=>{
+    if(!seen.has(s.key)){seen.add(s.key);withPick.push({key:s.key,name:s.name,pick:s.pick});}
+  });
+  // Teams that traded away their pick and have no 1st-round pick
+  const noPick = [
+    {key:'ATL',name:'Atlanta Falcons'},
+    {key:'DEN',name:'Denver Broncos'},
+    {key:'GB', name:'Green Bay Packers'},
+    {key:'IND',name:'Indianapolis Colts'},
+    {key:'JAC',name:'Jacksonville Jaguars'},
+  ].filter(t=>!seen.has(t.key)).sort((a,b)=>a.name.localeCompare(b.name));
+  return [...withPick,...noPick];
+})();
+
+const PROSPECTS = [
+  'Fernando Mendoza','Ty Simpson','Carson Beck','Drew Allar','Garrett Nussmeier',
+  'Jeremiyah Love','Jadarian Price','Kalel Mullings',
+  'Carnell Tate','Makai Lemon','Jordyn Tyson','Denzel Boston','K.C. Concepcion',
+  'Zachariah Branch','Omar Cooper Jr.','Germie Bernard','Malachi Fields',
+  'Kenyon Sadiq','Eli Stowers','Max Klare',
+  'Francis Mauigoa','Spencer Fano','Kadyn Proctor','Monroe Freeling',
+  'Olaivavega Ioane','Emmanuel Pregnon','Chase Bisontis','Wyatt Milum','Connor Lew','Keylan Rutledge',
+  'David Bailey','Arvell Reese','Rueben Bain Jr.','T.J. Parker','Keldric Faulk',
+  'Mike Green','Princely Umanmielen','Elijah Roberts',
+  'Peter Woods','Caleb Banks','Akheem Mesidor','Kayden McDonald','R Mason Thomas',
+  'Sonny Styles','C.J. Allen','Anthony Hill Jr.','Jacob Rodriguez','Jihaad Campbell','Dasan McCullough',
+  'Mansoor Delane','Jermod McCoy','Colton Hood','Avieon Terrell','Brandon Cisse',
+  'Chris Johnson','Devin Sanchez',"Azareye'h Thomas",
+  'Caleb Downs','Dillon Thieneman','Emmanuel McNeil-Warren','Lathan Ransom','Andrew Mukuba',
+  // Additional players from latest mocks
+  'Zion Young','Blake Miller','Christen Miller','Malachi Lawrence','Caleb Lomu',
+  'Cashius Howell','Chris Johnson','Max Iheanachor','Denzel Boston',
+].sort((a,b)=>a.replace(/[^a-z]/gi,'').localeCompare(b.replace(/[^a-z]/gi,'')));
+
+const MOCK_DRAFTS = {
+  // Mel Kiper Jr. — ESPN Final Mock 4.0, April 15 2026
+  // Trade: DAL sends 12+20 → CLE for 6+39; ARI sends 34+65 → MIA for 30+94
+  'Mel Kiper Jr. (ESPN)': {
+    desc: 'ESPN · Final 2-round mock, April 15 2026',
+    picks: ['Fernando Mendoza','David Bailey','Arvell Reese','Jeremiyah Love','Caleb Downs','Sonny Styles','Carnell Tate','Rueben Bain Jr.','Jordyn Tyson','Mansoor Delane','Francis Mauigoa','Kadyn Proctor','Makai Lemon','Spencer Fano','Kenyon Sadiq','Omar Cooper Jr.','Monroe Freeling','Dillon Thieneman','Emmanuel McNeil-Warren','Denzel Boston','Olaivavega Ioane','Peter Woods','Blake Miller','Jermod McCoy','Zion Young','Keldric Faulk','Max Iheanachor','Christen Miller','Colton Hood','Ty Simpson','Akheem Mesidor','Jadarian Price'],
+    teams: ['LV','NYJ','ARI','TEN','NYG','DAL','WAS','NO','KC','CIN','MIA','CLE','LAR','BAL','TB','NYJ','DET','MIN','CAR','CLE','PIT','LAC','PHI','CLE','CHI','BUF','SF','HOU','KC','ARI','NE','SEA'],
+  },
+  // Dane Brugler — The Athletic Mock Draft 4.0, April 15 2026
+  // Trade: DAL sends 12+20+2027 4th → CLE for 6+39
+  'Dane Brugler (The Athletic)': {
+    desc: 'The Athletic · 7-round mock 4.0, April 15 2026',
+    picks: ['Fernando Mendoza','David Bailey','Arvell Reese','Jeremiyah Love','Caleb Downs','Sonny Styles','Carnell Tate','Rueben Bain Jr.','Mansoor Delane','Francis Mauigoa','Keldric Faulk','Spencer Fano','Jordyn Tyson','Kenyon Sadiq','Olaivavega Ioane','Makai Lemon','Monroe Freeling','Jermod McCoy','Dillon Thieneman','K.C. Concepcion','Omar Cooper Jr.','Akheem Mesidor','Kadyn Proctor','Emmanuel McNeil-Warren','T.J. Parker','Malachi Lawrence','Caleb Lomu','Chase Bisontis','Denzel Boston','Chris Johnson','Blake Miller','Colton Hood'],
+    teams: ['LV','NYJ','ARI','TEN','NYG','DAL','WAS','NO','CIN','MIA','MIA','CLE','LAR','BAL','TB','NYJ','DET','MIN','CAR','CLE','PIT','LAC','PHI','CLE','CHI','BUF','SF','HOU','KC','MIA','NE','SEA'],
+  },
+  // Vinnie Iyer — Sporting News 3-round mock, April 15 2026
+  'Vinnie Iyer (Sporting News)': {
+    desc: 'The Sporting News · 3-round mock, April 15 2026',
+    picks: ['Fernando Mendoza','David Bailey','Arvell Reese','Jeremiyah Love','Sonny Styles','Carnell Tate','Caleb Downs','Rueben Bain Jr.','Mansoor Delane','Peter Woods','Francis Mauigoa','Jermod McCoy','Spencer Fano','Monroe Freeling','Kenyon Sadiq','Makai Lemon','Olaivavega Ioane','Dillon Thieneman','Jordyn Tyson','Akheem Mesidor','Blake Miller','Avieon Terrell','Emmanuel McNeil-Warren','Caleb Lomu','Keldric Faulk','Cashius Howell','Kadyn Proctor','Kayden McDonald','Omar Cooper Jr.','K.C. Concepcion','C.J. Allen','T.J. Parker'],
+    teams: ['LV','NYJ','ARI','TEN','NYG','CLE','WAS','NO','KC','CIN','MIA','DAL','LAR','BAL','TB','NYJ','DET','MIN','CAR','DAL','PIT','LAC','PHI','CLE','CHI','BUF','SF','HOU','KC','MIA','NE','SEA'],
+  },
+  // Daniel Jeremiah — NFL Network Mock Draft 3.0, March 17 2026
+  'Daniel Jeremiah (NFL Network)': {
+    desc: 'NFL Network · Mock Draft 3.0, March 17 2026',
+    picks: ['Fernando Mendoza','David Bailey','Carnell Tate','Jeremiyah Love','Sonny Styles','Caleb Downs','Rueben Bain Jr.','Mansoor Delane','Francis Mauigoa','Jordyn Tyson','Spencer Fano','Peter Woods','Jermod McCoy','Kenyon Sadiq','Olaivavega Ioane','T.J. Parker','Arvell Reese','Ty Simpson','Colton Hood','Emmanuel Pregnon','Keldric Faulk','Anthony Hill Jr.','Jadarian Price','Caleb Banks','Chase Bisontis','Dillon Thieneman','Avieon Terrell','C.J. Allen','Monroe Freeling','Kayden McDonald','Omar Cooper Jr.','Denzel Boston'],
+    teams: ['LV','NYJ','ARI','TEN','NYG','CLE','WAS','NO','MIA','DAL','LAR','KC','BAL','TB','NYJ','DET','MIN','CAR','DAL','PIT','LAC','PHI','CLE','CHI','BUF','SF','HOU','KC','MIA','NE','SEA','SEA'],
+  },
+  // Peter Schrager — NFL Network insider mock, April 2026
+  'Peter Schrager (NFL Network)': {
+    desc: 'NFL Network Insider · Round 1 mock, April 2026',
+    picks: ['Fernando Mendoza','David Bailey','Arvell Reese','Jeremiyah Love','Carnell Tate','Makai Lemon','Sonny Styles','Mansoor Delane','Caleb Downs','Rueben Bain Jr.','Francis Mauigoa','Kenyon Sadiq','Spencer Fano','Peter Woods','Jordyn Tyson','Jermod McCoy','Olaivavega Ioane','Ty Simpson','T.J. Parker','Colton Hood','Jadarian Price','Emmanuel Pregnon','Avieon Terrell','Caleb Banks','Anthony Hill Jr.','Keldric Faulk','Dillon Thieneman','Chase Bisontis','C.J. Allen','Monroe Freeling','Kayden McDonald','Omar Cooper Jr.'],
+    teams: ['LV','NYJ','ARI','TEN','NYG','CLE','WAS','NO','KC','CIN','MIA','DAL','LAR','BAL','TB','NYJ','DET','MIN','CAR','DAL','PIT','LAC','PHI','CLE','CHI','BUF','SF','HOU','KC','MIA','NE','SEA'],
+  },
+};
+Object.values(MOCK_DRAFTS).forEach(m=>{const s={};m.picks=m.picks.map(p=>(!p||s[p])?'':(s[p]=true,p));while(m.picks.length<32)m.picks.push('');m.picks=m.picks.slice(0,32)});
+
+// ── Helpers ─────────────────────────────────────────────────
+const root = ()=>document.getElementById('app-root');
+function qs(sel,ctx=document){return ctx.querySelector(sel)}
+function qsa(sel,ctx=document){return Array.from(ctx.querySelectorAll(sel))}
+function initials(n){return(n||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}
+function go(screen,leagueId){
+  if(leagueId!==undefined) currentLeagueId=leagueId;
+  if(screen!=='league') currentTab='leaderboard';
+  currentScreen=screen;
+  render();
+}
+
+function isPickCorrect(pick,results){
+  if(!results||!Object.keys(results).length) return null;
+  const norm=s=>(s||'').trim().toLowerCase();
+  if(pick.type==='slot'){
+    // Always use string key since Supabase JSONB stores all keys as strings
+    const r=results[String(pick.slot)];
+    if(!r) return null;
+    return norm(r.player)===norm(pick.player);
+  } else {
+    if(!pick.team) return null;
+    // Get ALL results for this team (teams can have multiple picks)
+    const teamResults=Object.values(results).filter(x=>x.team===pick.team);
+    if(!teamResults.length) return null;
+    // Correct if ANY of this team's picks matches the player
+    if(teamResults.some(r=>norm(r.player)===norm(pick.player))) return true;
+    // Wrong only if the team has used ALL their picks and none matched
+    // (still pending if the team hasn't picked yet or has more picks coming)
+    // Count how many picks this team has in draft_results vs how many slots they hold
+    const teamSlotCount=DRAFT_SLOTS.filter(s=>s.key===pick.team).length;
+    if(teamResults.length>=teamSlotCount) return false;
+    // Team still has picks remaining — treat as pending
+    return null;
+  }
+}
+
+function recalcScore(picks, draftResults){
+  return (picks||[]).filter(p=>isPickCorrect(p,draftResults)===true).length;
+}
+
+// ── Boot ────────────────────────────────────────────────────
+async function boot(){
+  let booted = false;
+
+  // Register listener BEFORE getSession so PASSWORD_RECOVERY hash is caught
+  sb.auth.onAuthStateChange(async (event, session)=>{
+    if(event==='PASSWORD_RECOVERY'){
+      booted = true;
+      currentUser = session.user;
+      document.getElementById('loading-screen').style.display='none';
+      document.getElementById('main-app').style.display='block';
+      go('newPassword');
+      return;
+    }
+    // Only handle post-boot state changes (not the initial SIGNED_IN during boot)
+    if(!booted) return;
+    if(event==='SIGNED_IN' && session && currentScreen!=='newPassword'){
+      currentUser=session.user;
+      await loadProfile();
+      const pendingLeague=localStorage.getItem('pending_league_join');
+      if(pendingLeague){ localStorage.removeItem('pending_league_join'); await joinLeagueByInvite(pendingLeague); }
+      render();
+    } else if(event==='SIGNED_OUT'){
+      currentUser=null; currentProfile=null; currentLeagueId=null;
+      render();
+    }
+  });
+
+  const {data:{session}} = await sb.auth.getSession();
+  if(session){
+    currentUser = session.user;
+    await loadProfile();
+  }
+
+  // If PASSWORD_RECOVERY already handled boot, don't re-render
+  if(booted) return;
+  booted = true;
+
+  document.getElementById('loading-screen').style.display='none';
+  document.getElementById('main-app').style.display='block';
+
+  // Check URL for invite token ?join=LEAGUE_ID
+  const params = new URLSearchParams(window.location.search);
+  const joinId = params.get('join');
+  if(joinId){
+    if(currentUser){ await joinLeagueByInvite(joinId); }
+    else { localStorage.setItem('pending_league_join', joinId); }
+    window.history.replaceState({},'',window.location.pathname);
+  }
+
+  render();
+}
+
+async function loadProfile(){
+  const {data} = await sb.from('profiles').select('*').eq('id',currentUser.id).single();
+  currentProfile = data;
+}
+
+async function joinLeagueByInvite(leagueId){
+  if(!currentUser) return;
+  // Check if already a member
+  const {data:existing} = await sb.from('league_members').select('id').eq('league_id',leagueId).eq('user_id',currentUser.id).single();
+  if(existing) return;
+  // Join
+  await sb.from('league_members').insert({league_id:leagueId,user_id:currentUser.id,picks:[],score:0});
+  // Mark invite accepted
+  await sb.from('invites').update({accepted:true}).eq('league_id',leagueId).eq('email',currentUser.email);
+  currentLeagueId = leagueId;
+  currentScreen = 'league';
+}
+
+// ── Render ──────────────────────────────────────────────────
+function render(){
+  const hUser = document.getElementById('header-user');
+  if(currentProfile){
+    hUser.innerHTML=`
+      <div>${currentProfile.name}</div>
+      <div style="color:var(--muted);font-size:11px">${currentProfile.email}</div>
+      <button id="header-signout" style="margin-top:4px;background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:0;text-decoration:underline">Sign out</button>
+    `;
+    setTimeout(()=>{
+      const btn=document.getElementById('header-signout');
+      if(btn) btn.onclick=async()=>{ await sb.auth.signOut(); };
+    },0);
+  } else { hUser.textContent=''; }
+
+  root().innerHTML='<div style="text-align:center;padding:3rem;color:var(--muted)"><div class="spinner"></div></div>';
+
+  const screens={home:screenHome,auth:screenAuth,createProfile:screenCreateProfile,newPassword:screenNewPassword,league:screenLeague,createLeague:screenCreateLeague,makePicks:screenMakePicks};
+  const fn = screens[currentScreen]||screenHome;
+  fn();
+}
+
+// ── AUTH SCREEN (password-based) ────────────────────────────
+function screenAuth(){
+  const joinId = localStorage.getItem('pending_league_join') || '';
+  let mode = 'signin'; // 'signin' | 'signup' | 'reset'
+
+  const render = ()=>{
+    root().innerHTML=`
+      <div class="card" style="max-width:420px;margin:2rem auto">
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="font-size:40px;margin-bottom:8px">🏈</div>
+          <div style="font-size:18px;font-weight:600">${
+            mode==='signup' ? 'Create your account' :
+            mode==='reset'  ? 'Reset your password' :
+                              'Welcome back'
+          }</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:4px">${
+            mode==='signup' ? 'Sign up to join the draft league' :
+            mode==='reset'  ? 'Enter your email and we\'ll send a reset link' :
+                              'Sign in to your account'
+          }</div>
+        </div>
+
+        ${mode==='signup'?`
+          <label>Your name</label>
+          <input id="auth-name" placeholder="First and last name" />
+        `:''}
+
+        <label>Email address</label>
+        <input id="auth-email" type="email" placeholder="you@email.com" />
+
+        ${mode!=='reset'?`
+          <label>Password</label>
+          <input id="auth-password" type="password" placeholder="${mode==='signup'?'Create a password (min 6 chars)':'Your password'}" />
+        `:''}
+        ${mode==='signup'?`
+          <label>Confirm password</label>
+          <input id="auth-password2" type="password" placeholder="Repeat password" />
+        `:''}
+
+        <div id="auth-err" style="color:var(--red);font-size:12px;margin-bottom:8px;min-height:16px"></div>
+        <div id="auth-success" style="color:var(--green);font-size:12px;margin-bottom:8px;min-height:16px"></div>
+
+        <button class="btn primary full" id="auth-btn">${
+          mode==='signup' ? 'Create account →' :
+          mode==='reset'  ? 'Send reset link →' :
+                            'Sign in →'
+        }</button>
+
+        <div style="text-align:center;margin-top:14px;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:6px">
+          ${mode==='signin'?`
+            <div>No account yet? <button id="toggle-signup" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px;font-family:inherit">Create one</button></div>
+            <div>Forgot your password? <button id="toggle-reset" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px;font-family:inherit">Reset it</button></div>
+          `:''}
+          ${mode==='signup'?`
+            <div>Already have an account? <button id="toggle-signin" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px;font-family:inherit">Sign in</button></div>
+          `:''}
+          ${mode==='reset'?`
+            <div><button id="toggle-signin" style="background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px;font-family:inherit">← Back to sign in</button></div>
+          `:''}
+        </div>
+      </div>
+    `;
+
+    qs('#toggle-signup')?.addEventListener('click',()=>{ mode='signup'; render(); });
+    qs('#toggle-signin')?.addEventListener('click',()=>{ mode='signin'; render(); });
+    qs('#toggle-reset')?.addEventListener('click',()=>{ mode='reset'; render(); });
+
+    root().querySelectorAll('input').forEach(inp=>{
+      inp.onkeydown=e=>{ if(e.key==='Enter') qs('#auth-btn').click(); };
+    });
+
+    qs('#auth-btn').onclick=async()=>{
+      const email=(qs('#auth-email').value||'').trim();
+      const err=qs('#auth-err');
+      const success=qs('#auth-success');
+      const btn=qs('#auth-btn');
+      err.textContent=''; success.textContent='';
+
+      if(!email||!email.includes('@')){err.textContent='Enter a valid email address';return}
+
+      // ── Reset password ──
+      if(mode==='reset'){
+        btn.disabled=true; btn.textContent='Sending…';
+        const redirectTo = window.location.origin + window.location.pathname;
+        const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo});
+        btn.disabled=false; btn.textContent='Send reset link →';
+        if(error){err.textContent=error.message;return}
+        success.textContent='✓ Reset link sent — check your email and click the link.';
+        return;
+      }
+
+      const password=(qs('#auth-password').value||'');
+      if(!password){err.textContent='Enter your password';return}
+
+      // ── Sign up ──
+      if(mode==='signup'){
+        const name=(qs('#auth-name').value||'').trim();
+        const password2=(qs('#auth-password2').value||'');
+        if(!name){err.textContent='Enter your name';return}
+        if(password.length<6){err.textContent='Password must be at least 6 characters';return}
+        if(password!==password2){err.textContent='Passwords do not match';return}
+
+        btn.disabled=true; btn.textContent='Creating account…';
+        const {data,error}=await sb.auth.signUp({email,password});
+        if(error){err.textContent=error.message;btn.disabled=false;btn.textContent='Create account →';return}
+
+        currentUser=data.user;
+        const {error:profErr}=await sb.from('profiles').insert({id:data.user.id,name,email});
+        if(profErr&&profErr.code!=='23505'){
+          err.textContent=profErr.message;btn.disabled=false;btn.textContent='Create account →';return;
+        }
+        await loadProfile();
+        const pendingLeague=localStorage.getItem('pending_league_join');
+        if(pendingLeague){ localStorage.removeItem('pending_league_join'); await joinLeagueByInvite(pendingLeague); }
+        go('home');
+
+      // ── Sign in ──
+      } else {
+        btn.disabled=true; btn.textContent='Signing in…';
+        const {data,error}=await sb.auth.signInWithPassword({email,password});
+        if(error){
+          err.textContent=error.message==='Invalid login credentials'?'Incorrect email or password':error.message;
+          btn.disabled=false; btn.textContent='Sign in →'; return;
+        }
+        currentUser=data.user;
+        await loadProfile();
+        if(!currentProfile){ go('createProfile'); return; }
+        const pendingLeague=localStorage.getItem('pending_league_join');
+        if(pendingLeague){ localStorage.removeItem('pending_league_join'); await joinLeagueByInvite(pendingLeague); }
+        go('home');
+      }
+    };
+  };
+
+  render();
+}
+
+// ── NEW PASSWORD SCREEN (after clicking reset link) ──────────
+function screenNewPassword(){
+  root().innerHTML=`
+    <div class="card" style="max-width:420px;margin:2rem auto">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:40px;margin-bottom:8px">🔑</div>
+        <div style="font-size:18px;font-weight:600">Set new password</div>
+      </div>
+      <label>New password</label>
+      <input id="np-password" type="password" placeholder="New password (min 6 chars)" />
+      <label>Confirm new password</label>
+      <input id="np-password2" type="password" placeholder="Repeat new password" />
+      <div id="np-err" style="color:var(--red);font-size:12px;margin-bottom:8px;min-height:16px"></div>
+      <button class="btn primary full" id="np-btn">Set new password →</button>
+    </div>
+  `;
+  root().querySelectorAll('input').forEach(inp=>{ inp.onkeydown=e=>{ if(e.key==='Enter') qs('#np-btn').click(); }; });
+  qs('#np-btn').onclick=async()=>{
+    const p=(qs('#np-password').value||'');
+    const p2=(qs('#np-password2').value||'');
+    const err=qs('#np-err');
+    const btn=qs('#np-btn');
+    if(p.length<6){err.textContent='Password must be at least 6 characters';return}
+    if(p!==p2){err.textContent='Passwords do not match';return}
+    btn.disabled=true; btn.textContent='Saving…';
+    const {error}=await sb.auth.updateUser({password:p});
+    if(error){err.textContent=error.message;btn.disabled=false;btn.textContent='Set new password →';return}
+    // Clear hash and go home
+    window.history.replaceState({},'',window.location.pathname);
+    go('home');
+  };
+}
+
+// ── CREATE PROFILE (fallback for existing auth users without a profile) ───────
+function screenCreateProfile(){
+  root().innerHTML=`
+    <div class="card" style="max-width:420px;margin:2rem auto">
+      <div class="card-title">One last thing — what's your name?</div>
+      <label>Your name</label>
+      <input id="cp-name" placeholder="First and last name" />
+      <div id="cp-err" style="color:var(--red);font-size:12px;margin-bottom:8px"></div>
+      <button class="btn primary full" id="cp-btn">Continue →</button>
+    </div>
+  `;
+  qs('#cp-btn').onclick=async()=>{
+    const name=(qs('#cp-name').value||'').trim();
+    if(!name){qs('#cp-err').textContent='Enter your name';return}
+    qs('#cp-btn').disabled=true;
+    const {error}=await sb.from('profiles').insert({id:currentUser.id,name,email:currentUser.email});
+    if(error){qs('#cp-err').textContent=error.message;qs('#cp-btn').disabled=false;return}
+    await loadProfile();
+    go('home');
+  };
+}
+
+// ── HOME ────────────────────────────────────────────────────
+async function screenHome(){
+  if(!currentUser){go('auth');return}
+  if(!currentProfile){go('createProfile');return}
+
+  const {data:memberships} = await sb.from('league_members').select('league_id, leagues(id,name,draft_started,admin_id,draft_results), picks, score').eq('user_id',currentUser.id);
+
+  const leagues = (memberships||[]).map(m=>({...m.leagues, myPicks:m.picks, myScore:m.score}));
+
+  root().innerHTML=`
+    <div style="margin-bottom:16px">
+      <button class="btn primary full" id="create-btn">+ Create league</button>
+    </div>
+    ${leagues.length===0
+      ?`<div class="card" style="text-align:center;padding:2rem;color:var(--muted)">
+          <div style="font-size:40px;margin-bottom:12px">🏆</div>
+          <div>Create a league or accept an email invite to get started.</div>
+        </div>`
+      :`<div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Your leagues</div>
+        ${leagues.map(l=>{
+          const hasPicks=l.myPicks&&l.myPicks.length===32;
+          const isAdmin=l.admin_id===currentUser.id;
+          return `<div class="card league-card" data-id="${l.id}" style="cursor:pointer">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div>
+                <div style="font-size:16px;font-weight:600;margin-bottom:4px">${l.name}</div>
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+                ${isAdmin?'<span class="badge badge-blue">Admin</span>':''}
+                ${hasPicks?'<span class="badge badge-green">Picks in ✓</span>':'<span class="badge badge-amber">Picks needed</span>'}
+                ${l.draft_started?'<span class="badge badge-red">Live</span>':''}
+              </div>
+            </div>
+            ${l.draft_started?`<div style="margin-top:8px;font-size:13px;color:var(--accent);font-weight:600">${l.myScore||0} pts</div>`:''}
+          </div>`;
+        }).join('')}`
+    }
+  `;
+
+  qs('#create-btn').onclick=()=>go('createLeague');
+  qsa('.league-card').forEach(c=>c.onclick=()=>go('league',c.dataset.id));
+}
+
+// ── CREATE LEAGUE ───────────────────────────────────────────
+function screenCreateLeague(){
+  root().innerHTML=`
+    <div class="nav"><button class="back-btn" id="back">&#8592;</button><h2 style="font-size:18px;font-weight:600">Create a league</h2></div>
+    <div class="card">
+      <label>League name</label>
+      <input id="l-name" placeholder="e.g. The Draft Room" />
+      <div id="l-err" style="color:var(--red);font-size:12px;margin-bottom:8px"></div>
+      <button class="btn primary full" id="l-create">Create league →</button>
+    </div>
+  `;
+  qs('#back').onclick=()=>go('home');
+  qs('#l-create').onclick=async()=>{
+    const name=(qs('#l-name').value||'').trim();
+    if(!name){qs('#l-err').textContent='Enter a league name';return}
+    qs('#l-create').disabled=true;
+    const {data:league,error}=await sb.from('leagues').insert({name,admin_id:currentUser.id,draft_started:false,draft_results:{}}).select().single();
+    if(error){qs('#l-err').textContent=error.message;qs('#l-create').disabled=false;return}
+    await sb.from('league_members').insert({league_id:league.id,user_id:currentUser.id,picks:[],score:0});
+    go('league',league.id);
+  };
+}
+
+let currentTab = 'leaderboard'; // persists across screenLeague re-renders
+
+// ── LEAGUE HOME ─────────────────────────────────────────────
+async function screenLeague(){
+  if(!currentUser||!currentLeagueId){go('home');return}
+
+  // Load league + members + invites
+  const [{data:league},{data:members},{data:invites}] = await Promise.all([
+    sb.from('leagues').select('*').eq('id',currentLeagueId).single(),
+    sb.from('league_members').select('*, profiles(id,name,email)').eq('league_id',currentLeagueId),
+    sb.from('invites').select('*').eq('league_id',currentLeagueId),
+  ]);
+
+  if(!league){go('home');return}
+
+  const isAdmin = league.admin_id===currentUser.id;
+  const myMembership = (members||[]).find(m=>m.user_id===currentUser.id);
+  const hasPicks = myMembership&&myMembership.picks&&myMembership.picks.length===32;
+  const resultsCount = Object.keys(league.draft_results||{}).length;
+  const inviteUrl = `${window.location.href.split('?')[0]}?join=${league.id}`;
+
+  // Setup realtime
+  if(realtimeSub) sb.removeChannel(realtimeSub);
+  realtimeSub = sb.channel(`league-${league.id}`)
+    .on('postgres_changes',{event:'*',schema:'public',table:'leagues',filter:`id=eq.${league.id}`},()=>screenLeague())
+    .on('postgres_changes',{event:'*',schema:'public',table:'league_members',filter:`league_id=eq.${league.id}`},()=>screenLeague())
+    .subscribe();
+
+  // Silently fix any stale scores in DB (runs in background, doesn't block render)
+  if(league.draft_started && members && Object.keys(league.draft_results||{}).length > 0){
+    const draftResults = league.draft_results||{};
+    Promise.all((members||[]).map(m=>{
+      const correct = recalcScore(m.picks||[], draftResults);
+      if(correct !== (m.score||0)){
+        return sb.from('league_members').update({score:correct}).eq('id',m.id);
+      }
+    }).filter(Boolean)).catch(()=>{});
+  }
+
+  const div = document.createElement('div');
+
+  // ── Most recent pick banner ──
+  const sortedResults = Object.entries(league.draft_results||{}).sort((a,b)=>+b[0]-+a[0]);
+  const latestPick = sortedResults[0];
+  const latestHtml = latestPick ? (()=>{
+    const [slot,r] = latestPick;
+    const teamInfo = NFL_TEAMS.find(t=>t.key===r.team)||{name:r.team,key:r.team};
+    return `
+      <div style="background:linear-gradient(135deg,#0a1628,#0d2040);border:1px solid rgba(0,168,255,0.4);border-radius:12px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:14px">
+        <div style="flex-shrink:0;width:52px;height:52px;border-radius:50%;background:rgba(0,168,255,0.15);border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--accent);text-align:center;line-height:1.2">#${slot}<br>${r.team}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px">Most recent pick</div>
+          <div style="font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.player}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${teamInfo.name} · Pick #${slot}</div>
+        </div>
+        <div style="flex-shrink:0;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:var(--accent)">${slot}</div>
+          <div style="font-size:10px;color:var(--muted)">of 32</div>
+        </div>
+      </div>`;
+  })() : '';
+
+  div.innerHTML=`
+    <div class="nav">
+      <button class="back-btn" id="back">&#8592;</button>
+      <div style="flex:1">
+        <div style="font-size:18px;font-weight:600">${league.name}</div>
+        <div style="font-size:12px;color:var(--muted)">${(members||[]).length} member${(members||[]).length!==1?'s':''}</div>
+      </div>
+      ${league.draft_started?'<span class="live-badge"><span class="dot"></span> LIVE</span>':''}
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="num">${(members||[]).length}</div><div class="lbl">Members</div></div>
+      <div class="metric"><div class="num">${(members||[]).filter(m=>m.picks&&m.picks.length===32).length}</div><div class="lbl">Picks in</div></div>
+      <div class="metric"><div class="num">${resultsCount}/32</div><div class="lbl">Drafted</div></div>
+    </div>
+    ${league.draft_started ? latestHtml : ''}
+    ${!hasPicks&&!league.draft_started
+      ?`<div class="card" style="border-color:var(--accent)">
+          <div class="card-title">⚡ Submit your picks</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:10px">Pick 32 players before the draft starts!</div>
+          <button class="btn primary full" id="picks-btn">Make my 32 picks →</button>
+        </div>`
+      :hasPicks
+        ?`<div class="success-msg">✓ Your picks are locked in${!league.draft_started?' — edit until draft starts':''}</div>
+          ${!league.draft_started?'<button class="btn full" id="picks-btn" style="margin-bottom:12px">Edit picks</button>':''}`
+        :''
+    }
+    <div class="tabs">
+      <div class="tab active" data-tab="leaderboard">Leaderboard</div>
+      <div class="tab" data-tab="tracker">Draft Picks</div>
+      <div class="tab" data-tab="members">Members</div>
+      <div class="tab" data-tab="invite">Invite</div>
+      ${isAdmin?'<div class="tab" data-tab="admin">Admin</div>':''}
+    </div>
+    <div id="tab-content"></div>
+  `;
+  root().innerHTML='';
+  root().appendChild(div);
+
+  let activeTab=currentTab;
+  function showTab(t){
+    activeTab=t;
+    currentTab=t;
+    qsa('.tab',div).forEach(x=>x.classList.toggle('active',x.dataset.tab===t));
+    const tc=qs('#tab-content',div);
+    if(t==='leaderboard') renderLeaderboard(tc,league,members||[]);
+    else if(t==='tracker') renderDraftTracker(tc,league);
+    else if(t==='members') renderMembers(tc,members||[],league,invites||[]);
+    else if(t==='invite') renderInvite(tc,league,inviteUrl,invites||[]);
+    else if(t==='admin') renderAdmin(tc,league,members||[]);
+  }
+
+  qs('#back',div).onclick=()=>{if(realtimeSub)sb.removeChannel(realtimeSub);go('home')};
+  const pb=qs('#picks-btn',div);
+  if(pb) pb.onclick=()=>go('makePicks');
+  qsa('.tab',div).forEach(tab=>tab.onclick=()=>showTab(tab.dataset.tab));
+  showTab('leaderboard');
+}
+
+// ── LEADERBOARD ─────────────────────────────────────────────
+function renderLeaderboard(tc,league,members){
+  // Recalculate scores live from picks + draft_results so display is
+  // always accurate even if the stored score field in the DB is stale
+  const draftResults = league.draft_results||{};
+  const withScores = members.map(m=>({
+    ...m,
+    liveScore: league.draft_started ? recalcScore(m.picks||[], draftResults) : 0,
+  }));
+  const sorted=[...withScores].sort((a,b)=>(b.liveScore||0)-(a.liveScore||0));
+  const medals=['🥇','🥈','🥉'];
+  let expandedId=null;
+
+  const renderLB=()=>{
+    tc.innerHTML='';
+    const listDiv=document.createElement('div');
+    sorted.forEach((m,i)=>{
+      const isMe=m.user_id===currentUser.id;
+      const isExpanded=league.draft_started&&expandedId===m.user_id;
+      const row=document.createElement('div');
+      row.style.cssText='border-bottom:1px solid var(--border)';
+      const header=document.createElement('div');
+      header.className='lb-row';
+      header.style.borderBottom='none';
+      header.innerHTML=`
+        <div class="lb-rank">${medals[i]||i+1}</div>
+        <div class="lb-name">${m.profiles?.name||'Unknown'} ${isMe?'<span style="font-size:11px;color:var(--accent)">(you)</span>':''}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${!league.draft_started
+            ?`<span class="${m.picks&&m.picks.length===32?'badge badge-green':'badge badge-amber'}">${m.picks&&m.picks.length===32?'Ready':'Pending'}</span>`
+            :`<span class="lb-pts">${m.liveScore} pt${m.liveScore!==1?'s':''}</span>`
+          }
+          ${league.draft_started&&m.picks&&m.picks.length?`<span style="font-size:16px;color:var(--muted);display:inline-block;transform:rotate(${isExpanded?90:0}deg);transition:transform 0.2s">›</span>`:''}
+        </div>
+      `;
+      if(league.draft_started&&m.picks&&m.picks.length){
+        header.onclick=()=>{expandedId=isExpanded?null:m.user_id;renderLB()};
+      }
+      row.appendChild(header);
+      if(isExpanded){
+        const panel=document.createElement('div');
+        panel.style.cssText='padding:0 0 12px 0;animation:fadeIn 0.15s ease';
+        const correct=m.picks.filter(p=>isPickCorrect(p,league.draft_results)===true).length;
+        const wrong=m.picks.filter(p=>isPickCorrect(p,league.draft_results)===false).length;
+        const pending=m.picks.filter(p=>isPickCorrect(p,league.draft_results)===null).length;
+        panel.innerHTML=`<div style="display:flex;gap:10px;margin-bottom:10px;padding:8px 0 8px 32px">
+          <span style="font-size:12px;color:var(--green);font-weight:600">✓ ${correct}</span>
+          <span style="font-size:12px;color:var(--red);font-weight:600">✗ ${wrong}</span>
+          <span style="font-size:12px;color:var(--muted)">· ${pending} pending</span>
+        </div>`;
+        const grid=document.createElement('div');
+        grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:4px';
+        m.picks.forEach(p=>{
+          const result=isPickCorrect(p,league.draft_results);
+          const bg=result===true?'rgba(34,197,94,0.1)':result===false?'rgba(239,68,68,0.1)':'var(--surface2)';
+          const border=result===true?'var(--green)':result===false?'var(--red)':'var(--border)';
+          const mark=result===true?'✓':result===false?'✗':'·';
+          const markColor=result===true?'var(--green)':result===false?'var(--red)':'var(--muted)';
+          const typeTag=p.type==='slot'
+            ?`<span style="font-size:9px;background:rgba(0,168,255,0.15);color:var(--accent);padding:1px 5px;border-radius:3px;font-weight:600">SLOT</span>`
+            :`<span style="font-size:9px;background:rgba(245,158,11,0.15);color:var(--amber);padding:1px 5px;border-radius:3px;font-weight:600">TEAM</span>`;
+          const cell=document.createElement('div');
+          cell.style.cssText=`background:${bg};border:1px solid ${border};border-radius:6px;padding:6px 8px`;
+          cell.innerHTML=`<div style="display:flex;align-items:center;gap:5px">${typeTag}<span style="font-size:11px;color:var(--muted);font-weight:600">${p.type==='slot'?`#${p.slot}`:p.team}</span><span style="margin-left:auto;font-size:13px;color:${markColor};font-weight:700">${mark}</span></div><div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.player}</div>`;
+          grid.appendChild(cell);
+        });
+        panel.appendChild(grid);
+        row.appendChild(panel);
+      }
+      listDiv.appendChild(row);
+    });
+    tc.appendChild(listDiv);
+    const footer=document.createElement('div');
+    footer.className='info-box';
+    footer.style.marginTop='12px';
+    footer.innerHTML=league.draft_started
+      ?`<strong>${Object.keys(league.draft_results||{}).length}/32</strong> picks recorded. Scores update live. Tap any member to see their picks.`
+      :'Scores and picks revealed when the draft starts. Get your picks in!';
+    tc.appendChild(footer);
+
+    // ── Comparison grid ──
+    if(league.draft_started){
+      const membersWithPicks = sorted.filter(m=>m.picks&&m.picks.length===32);
+      if(membersWithPicks.length > 1){
+        // Collect all unique players across all picks
+        const allPlayers = [];
+        const seen = new Set();
+        // Order by draft slot/results order if available, else alphabetical
+        const resultOrder = Object.entries(league.draft_results||{}).sort((a,b)=>+a[0]-+b[0]).map(([,r])=>r.player);
+        resultOrder.forEach(p=>{if(p&&!seen.has(p)){seen.add(p);allPlayers.push(p)}});
+        // Then any remaining picked players not yet drafted
+        membersWithPicks.forEach(m=>m.picks.forEach(p=>{if(p.player&&!seen.has(p.player)){seen.add(p.player);allPlayers.push(p.player)}}));
+
+        const section = document.createElement('div');
+        section.style.cssText='margin-top:16px';
+        section.innerHTML=`<div style="font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Pick comparison</div>`;
+
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText='overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--border);border-radius:10px';
+
+        const table = document.createElement('table');
+        table.style.cssText='border-collapse:collapse;min-width:100%;font-size:12px;table-layout:auto';
+
+        // Header row — member names
+        const thead = document.createElement('thead');
+        const hrow = document.createElement('tr');
+        hrow.innerHTML=`<th style="text-align:left;padding:8px 10px;background:var(--surface2);color:var(--muted);font-weight:600;position:sticky;left:0;z-index:2;border-right:1px solid var(--border);white-space:nowrap;min-width:130px">Player</th>`;
+        membersWithPicks.forEach(m=>{
+          const th=document.createElement('th');
+          th.style.cssText='padding:8px 8px;background:var(--surface2);color:var(--text);font-weight:600;text-align:center;white-space:nowrap;border-left:1px solid var(--border);min-width:80px';
+          const name=(m.profiles?.name||'?').split(' ');
+          th.innerHTML=`<div>${name[0]}</div>${name[1]?`<div style="color:var(--muted);font-weight:400">${name[1]}</div>`:''}
+            <div style="font-size:10px;color:var(--accent);margin-top:2px">${m.liveScore} pts</div>`;
+          hrow.appendChild(th);
+        });
+        thead.appendChild(hrow);
+        table.appendChild(thead);
+
+        // Body — one row per player
+        const tbody = document.createElement('tbody');
+        allPlayers.forEach((player,pi)=>{
+          const draftResult = Object.values(league.draft_results||{}).find(r=>r.player?.toLowerCase()===player.toLowerCase());
+          const tr = document.createElement('tr');
+          tr.style.background = pi%2===0?'var(--surface)':'var(--surface2)';
+
+          // Player name cell
+          const nameTd = document.createElement('td');
+          nameTd.style.cssText='padding:7px 10px;position:sticky;left:0;z-index:1;border-right:1px solid var(--border);white-space:nowrap;font-weight:500';
+          nameTd.style.background = pi%2===0?'var(--surface)':'var(--surface2)';
+          nameTd.innerHTML=`<div style="font-size:12px">${player}</div>${draftResult?`<div style="font-size:10px;color:var(--muted)">${draftResult.team||''}</div>`:'<div style="font-size:10px;color:var(--muted)">Undrafted</div>'}`;
+          tr.appendChild(nameTd);
+
+          // One cell per member
+          membersWithPicks.forEach(m=>{
+            const pick = m.picks.find(p=>p.player?.toLowerCase()===player.toLowerCase());
+            const td = document.createElement('td');
+            td.style.cssText='padding:5px 6px;text-align:center;border-left:1px solid var(--border)';
+            if(pick){
+              const result = isPickCorrect(pick, league.draft_results);
+              const bg = result===true?'rgba(34,197,94,0.15)':result===false?'rgba(239,68,68,0.12)':'rgba(0,168,255,0.08)';
+              const color = result===true?'var(--green)':result===false?'var(--red)':'var(--accent)';
+              const icon = result===true?'✓':result===false?'✗':'·';
+              const label = pick.type==='slot'?`#${pick.slot}`:pick.team||'TEAM';
+              td.style.background=bg;
+              td.innerHTML=`<div style="font-size:13px;font-weight:700;color:${color}">${icon}</div><div style="font-size:9px;color:var(--muted);margin-top:1px">${label}</div>`;
+            } else {
+              td.style.color='var(--border)';
+              td.textContent='—';
+            }
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        wrapper.appendChild(table);
+        section.appendChild(wrapper);
+        tc.appendChild(section);
+      }
+    }
+  };
+  renderLB();
+}
+
+// ── MEMBERS ─────────────────────────────────────────────────
+function renderMembers(tc,members,league,invites){
+  const fee = league.entry_fee||0;
+  const venmo = league.venmo||'';
+  const payNote = league.payment_note||'';
+  const isAdmin = league.admin_id===currentUser.id;
+  const totalPaid = (members||[]).filter(m=>m.paid).length;
+
+  tc.innerHTML=`
+    ${fee>0?`
+    <div class="card" style="border-color:rgba(34,197,94,0.3);background:rgba(34,197,94,0.05);margin-bottom:4px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div>
+          <div style="font-size:16px;font-weight:700;color:var(--green)">$${fee} entry fee</div>
+          ${venmo?`<div style="font-size:13px;color:var(--muted);margin-top:2px">Venmo: <strong style="color:var(--text)">@${venmo}</strong></div>`:''}
+          ${payNote?`<div style="font-size:12px;color:var(--muted);margin-top:2px">${payNote}</div>`:''}
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:22px;font-weight:700;color:var(--green)">${totalPaid}/${members.length}</div>
+          <div style="font-size:11px;color:var(--muted)">paid</div>
+        </div>
+      </div>
+      ${venmo&&!isAdmin?`<a href="https://venmo.com/${venmo}?txn=pay&amount=${fee}&note=Draft+League+Entry" target="_blank" class="btn primary full" style="text-align:center;text-decoration:none;display:block;padding:10px">Pay $${fee} on Venmo →</a>`:''}
+    </div>`:''}
+    <div>
+      ${members.map(m=>`
+        <div class="member-row" style="align-items:center">
+          <div class="avatar">${initials(m.profiles?.name||'?')}</div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:500">${m.profiles?.name||'Unknown'} ${m.user_id===currentUser.id?'<span style="font-size:11px;color:var(--accent)">(you)</span>':''} ${m.user_id===league.admin_id?'<span class="badge badge-blue" style="margin-left:4px">Admin</span>':''}</div>
+            <div style="font-size:12px;color:var(--muted)">${m.profiles?.email||''}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+            <span class="${m.picks&&m.picks.length===32?'badge badge-green':'badge badge-amber'}">${m.picks&&m.picks.length===32?'✓ Ready':'Pending'}</span>
+            ${fee>0?(isAdmin
+              ?`<button class="btn sm pay-toggle" data-id="${m.id}" data-paid="${m.paid?'1':'0'}" style="font-size:11px;min-width:56px;${m.paid?'border-color:var(--green);color:var(--green)':'border-color:var(--red);color:var(--red)'}">${m.paid?'✓ Paid':'✗ Unpaid'}</button>`
+              :`<span class="${m.paid?'badge badge-green':'badge badge-amber'}">${m.paid?'✓ Paid':'Unpaid'}</span>`
+            ):''}
+          </div>
+        </div>
+      `).join('')}
+      ${invites.filter(i=>!i.accepted).map(i=>`
+        <div class="member-row" style="opacity:0.8">
+          <div class="avatar" style="background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.3);color:var(--amber)">?</div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:500">${i.name||i.email}</div>
+            <div style="font-size:12px;color:var(--muted)">${i.email}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+            <span class="badge badge-amber">Invited</span>
+            <button class="btn sm members-resend-btn" data-email="${i.email}" data-name="${i.name||''}" style="font-size:11px">Resend</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  // Resend buttons — switch to Invite tab and pre-fill form
+  qsa('.members-resend-btn',tc).forEach(btn=>{
+    btn.onclick=()=>{
+      // Switch to invite tab
+      currentTab='invite';
+      screenLeague().then(()=>{
+        // Pre-fill the invite form after render
+        setTimeout(()=>{
+          const nameInp=document.getElementById('inv-name');
+          const emailInp=document.getElementById('inv-email');
+          if(nameInp) nameInp.value=btn.dataset.name||'';
+          if(emailInp) emailInp.value=btn.dataset.email||'';
+          if(nameInp) nameInp.scrollIntoView({behavior:'smooth',block:'center'});
+        },100);
+      });
+    };
+  });
+
+  // Admin can toggle paid status
+  qsa('.pay-toggle',tc).forEach(btn=>{
+    btn.onclick=async()=>{
+      const newPaid=btn.dataset.paid==='0';
+      btn.disabled=true;
+      await sb.from('league_members').update({paid:newPaid}).eq('id',btn.dataset.id);
+    };
+  });
+}
+
+// ── INVITE ──────────────────────────────────────────────────
+function renderInvite(tc,league,inviteUrl,invites){
+  tc.innerHTML=`
+    <div class="card">
+      <div class="card-title">Invite link</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Anyone who opens this link will be prompted to create an account and automatically join your league.</div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;word-break:break-all;color:var(--accent);margin-bottom:10px">${inviteUrl}</div>
+      <button class="btn full" id="copy-link">Copy invite link</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Send email invite</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:6px">
+        <span style="color:var(--green)">●</span> Sending via Resend
+      </div>
+      <label>Their name</label>
+      <input id="inv-name" placeholder="Friend's name" />
+      <label>Email address</label>
+      <input id="inv-email" type="email" placeholder="friend@email.com" />
+      <button class="btn primary full" id="inv-send">Send invite →</button>
+      <div id="inv-msg" style="margin-top:8px;font-size:13px;min-height:18px"></div>
+    </div>
+
+    ${invites.length ? `
+      <div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Invites sent</div>
+      ${invites.map(i=>`
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
+          <span style="flex:1">${i.name ? i.name+' — ' : ''}${i.email}</span>
+          <span class="${i.accepted?'badge badge-green':'badge badge-amber'}">${i.accepted?'Joined':'Pending'}</span>
+          ${!i.accepted?`<button class="btn sm resend-btn" data-email="${i.email}" data-name="${i.name||''}" style="font-size:11px">Resend</button>`:''}
+        </div>`).join('')}
+    ` : ''}
+  `;
+
+  qs('#copy-link',tc).onclick=()=>{
+    navigator.clipboard.writeText(inviteUrl)
+      .then(()=>{ qs('#copy-link',tc).textContent='Copied! ✓'; setTimeout(()=>qs('#copy-link',tc).textContent='Copy invite link',2000); })
+      .catch(()=>prompt('Copy this link:',inviteUrl));
+  };
+
+  qs('#inv-send',tc).onclick=async()=>{
+    const name=(qs('#inv-name',tc).value||'').trim();
+    const email=(qs('#inv-email',tc).value||'').trim();
+    const msgEl=qs('#inv-msg',tc);
+    const btn=qs('#inv-send',tc);
+    if(!name){ msgEl.style.color='var(--red)'; msgEl.textContent='Enter their name'; return; }
+    if(!email||!email.includes('@')){ msgEl.style.color='var(--red)'; msgEl.textContent='Enter a valid email'; return; }
+
+    btn.disabled=true; btn.textContent='Sending…'; msgEl.textContent='';
+
+    try{
+      // Delete existing invite first so upsert always creates a fresh row
+      await sb.from('invites').delete().eq('league_id',league.id).eq('email',email);
+      await sb.from('invites').insert({league_id:league.id, invited_by:currentUser.id, email, name, accepted:false});
+
+      // Call edge function with a 15s timeout
+      const {data:{session}} = await sb.auth.getSession();
+      const controller = new AbortController();
+      const timeout = setTimeout(()=>controller.abort(), 15000);
+
+      const fnUrl = `${SUPA_URL}/functions/v1/send-invite`;
+      console.log('Calling edge function:', fnUrl);
+
+      let res;
+      try{
+        res = await fetch(fnUrl, {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPA_KEY}`,
+          },
+          body: JSON.stringify({
+            to_name: name,
+            to_email: email,
+            from_name: currentProfile.name,
+            league_name: league.name,
+            invite_url: inviteUrl,
+          }),
+        });
+      } finally{
+        clearTimeout(timeout);
+      }
+
+      const result = await res.json();
+      if(!res.ok) throw new Error(result.error||`Edge function error ${res.status}`);
+
+      msgEl.style.color='var(--green)';
+      msgEl.textContent=`✓ Invite sent to ${email}`;
+      qs('#inv-name',tc).value='';
+      qs('#inv-email',tc).value='';
+      setTimeout(()=>screenLeague(), 1500);
+
+    } catch(e){
+      msgEl.style.color='var(--red)';
+      msgEl.textContent=e.name==='AbortError'
+        ? 'Timed out — check that the edge function is deployed and the RESEND_API_KEY secret is set'
+        : `Failed: ${e.message}`;
+    } finally{
+      btn.disabled=false;
+      btn.textContent='Send invite →';
+    }
+  };
+
+  // Resend buttons auto-fill the form
+  qsa('.resend-btn',tc).forEach(b=>{
+    b.onclick=()=>{
+      qs('#inv-name',tc).value=b.dataset.name||'';
+      qs('#inv-email',tc).value=b.dataset.email||'';
+      qs('#inv-name',tc).scrollIntoView({behavior:'smooth',block:'center'});
+      qs('#inv-name',tc).focus();
+    };
+  });
+}
+
+// ── DRAFT TRACKER ────────────────────────────────────────────
+function renderDraftTracker(tc,league){
+  const results = Object.entries(league.draft_results||{}).sort((a,b)=>+a[0]-+b[0]);
+  if(!league.draft_started){
+    tc.innerHTML='<div class="info-box">Draft tracker will appear here once the draft starts.</div>';
+    return;
+  }
+  tc.innerHTML='';
+  if(results.length===0){
+    tc.innerHTML='<div style="text-align:center;padding:2rem;color:var(--muted)">No picks recorded yet. Check back soon!</div>';
+    return;
+  }
+  const grid=document.createElement('div');
+  grid.style.cssText='display:flex;flex-direction:column;gap:6px';
+  results.forEach(([slot,r])=>{
+    const teamInfo=NFL_TEAMS.find(t=>t.key===r.team)||{name:r.team,key:r.team};
+    const card=document.createElement('div');
+    card.style.cssText='display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:10px';
+    card.innerHTML=`
+      <div style="flex-shrink:0;width:40px;height:40px;border-radius:8px;background:rgba(0,168,255,0.1);border:1px solid rgba(0,168,255,0.3);display:flex;flex-direction:column;align-items:center;justify-content:center">
+        <div style="font-size:9px;color:var(--muted);text-transform:uppercase">Pick</div>
+        <div style="font-size:16px;font-weight:700;color:var(--accent);line-height:1">${slot}</div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.player}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:1px">${teamInfo.name}</div>
+      </div>
+      <div style="flex-shrink:0;font-size:12px;font-weight:700;color:var(--accent);background:rgba(0,168,255,0.1);padding:4px 8px;border-radius:6px">${r.team}</div>
+    `;
+    grid.appendChild(card);
+  });
+  tc.appendChild(grid);
+  if(results.length<32){
+    const remaining=document.createElement('div');
+    remaining.style.cssText='margin-top:10px;padding:10px;background:var(--surface2);border-radius:8px;text-align:center;font-size:13px;color:var(--muted)';
+    remaining.textContent=`${32-results.length} picks remaining`;
+    tc.appendChild(remaining);
+  }
+}
+
+// ── ADMIN ───────────────────────────────────────────────────
+function renderAdmin(tc,league,members){
+  const results = league.draft_results||{};
+  const resultsCount = Object.keys(results).length;
+  const nextSlot = resultsCount+1;
+  const usedPlayers = new Set(Object.values(results).map(r=>r.player));
+
+  tc.innerHTML=`
+    <div class="card">
+      <div class="card-title">Draft control</div>
+      ${!league.draft_started
+        ?`<div style="font-size:13px;color:var(--muted);margin-bottom:12px">Starting the draft locks all picks. Members can no longer edit.</div>
+           <button class="btn danger full" id="start-draft">Start draft & enable scoring</button>`
+        :`<div class="success-msg">Draft is live! Picks must be entered in order.</div>
+           <button class="btn" id="restart-draft" style="margin-top:8px;width:100%;justify-content:center;border-color:var(--amber);color:var(--amber)">↺ Restart draft & clear all picks</button>`
+      }
+    </div>
+    ${league.draft_started&&resultsCount<32?`
+    <div class="card">
+      <div class="card-title">Record pick #${nextSlot}</div>
+      <div class="grid2">
+        <div>
+          <label>Pick #</label>
+          <select id="a-slot" style="margin-bottom:0">
+            ${Array.from({length:32},(_,i)=>i+1)
+              .filter(n=>!results[n]&&!results[String(n)])
+              .map(n=>`<option value="${n}" ${n===nextSlot?'selected':''}>${n}</option>`)
+              .join('')}
+          </select>
+        </div>
+        <div>
+          <label>Team selecting</label>
+          <select id="a-team" style="margin-bottom:0">
+            <option value="">-- team --</option>
+            ${ALL_NFL_TEAMS_SORTED.map(t=>`<option value="${t.key}">${t.name}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <label>Player selected</label>
+        <div style="position:relative">
+          <input id="a-player-search" placeholder="Search or type player name…" autocomplete="off" style="margin-bottom:0"/>
+          <div id="a-player-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--accent);border-radius:8px;z-index:50;max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,0.4)"></div>
+        </div>
+        <input id="a-player-value" type="hidden" value=""/>
+      </div>
+      <button class="btn primary full" id="a-save" style="margin-top:10px">Record pick #${nextSlot} & update all scores →</button>
+      <div id="a-msg" style="margin-top:8px;font-size:13px;min-height:18px"></div>
+    </div>
+    `:''}
+    ${resultsCount===32?`<div class="success-msg">🎉 All 32 picks have been recorded!</div>`:''}
+    ${league.draft_started?`
+    <div class="card">
+      <div class="card-title">Picks recorded (${resultsCount}/32)</div>
+      <div class="scroll-area">
+        ${resultsCount===0
+          ?`<div style="color:var(--muted);font-size:13px">No picks yet — record pick #1 above</div>`
+          :Object.entries(results).sort((a,b)=>+a[0]-+b[0]).map(([slot,r])=>`
+            <div style="display:flex;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;align-items:center">
+              <span style="min-width:32px;color:var(--muted);font-weight:600">#${slot}</span>
+              <span style="flex:1;font-weight:500">${r.player}</span>
+              <button class="btn sm del-pick" data-slot="${slot}" style="border-color:var(--red);color:var(--red)">✕</button>
+            </div>`).join('')
+        }
+      </div>
+    </div>`:''}
+    <div class="card" style="border-color:var(--red);margin-top:4px">
+      <div class="card-title" style="color:var(--red)">⚠ Danger zone</div>
+      <button class="btn danger full" id="delete-league">Delete this league permanently</button>
+    </div>
+    <div class="card" style="margin-top:4px">
+      <div class="card-title">💰 Payment settings</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Set an entry fee and Venmo handle so members know how to pay. Toggle paid status in the Members tab.</div>
+      <label>Entry fee ($)</label>
+      <input id="pay-fee" type="number" min="0" placeholder="e.g. 20" value="${league.entry_fee||''}" style="margin-bottom:10px"/>
+      <label>Venmo handle (without @)</label>
+      <input id="pay-venmo" placeholder="e.g. jake-zacher" value="${league.venmo||''}" style="margin-bottom:10px"/>
+      <label>Payment note (optional)</label>
+      <input id="pay-note" placeholder="e.g. Include your name in the note" value="${league.payment_note||''}" style="margin-bottom:10px"/>
+      <button class="btn primary full" id="pay-save">Save payment settings</button>
+      <div id="pay-msg" style="margin-top:8px;font-size:13px;min-height:18px"></div>
+    </div>
+    <div class="card" style="margin-top:4px">
+      <div class="card-title">📤 Upload picks for a member</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Upload a filled CSV on behalf of any leaguemate. Uses the same format as the picks CSV template.</div>
+      <label>Select member</label>
+      <select id="admin-picks-member" style="margin-bottom:10px">
+        <option value="">-- choose member --</option>
+        ${(members||[]).map(m=>`<option value="${m.id}">${m.profiles?.name||m.profiles?.email||'Unknown'}</option>`).join('')}
+      </select>
+      <label>CSV file</label>
+      <input type="file" id="admin-picks-file" accept=".csv" style="font-size:13px;color:var(--text);margin-bottom:10px"/>
+      <button class="btn primary full" id="admin-picks-upload">Upload picks for member</button>
+      <div id="admin-picks-msg" style="margin-top:8px;font-size:13px;min-height:18px"></div>
+    </div>
+    <div class="card" style="margin-top:4px">
+      <div class="card-title">🚫 Remove a member</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Remove a leaguemate and their picks from this league. This cannot be undone.</div>
+      <select id="admin-remove-member" style="margin-bottom:10px">
+        <option value="">-- choose member --</option>
+        ${(members||[]).filter(m=>m.user_id!==league.admin_id).map(m=>`<option value="${m.id}">${m.profiles?.name||m.profiles?.email||'Unknown'}</option>`).join('')}
+      </select>
+      <button class="btn danger full" id="admin-remove-btn">Remove member from league</button>
+      <div id="admin-remove-msg" style="margin-top:8px;font-size:13px;min-height:18px"></div>
+    </div>
+  `;
+
+  qs('#start-draft',tc)?.addEventListener('click',async()=>{
+    if(!confirm('Start the draft? Picks will be locked.')) return;
+    await sb.from('leagues').update({draft_started:true}).eq('id',league.id);
+  });
+
+  qs('#restart-draft',tc)?.addEventListener('click',async()=>{
+    if(!confirm('Restart the draft? This will:\n• Clear all recorded picks\n• Reset all scores to 0\n• Allow members to edit their picks again\n\nThis cannot be undone.')) return;
+    const updates=(members||[]).map(m=>sb.from('league_members').update({score:0}).eq('id',m.id));
+    await Promise.all([
+      sb.from('leagues').update({draft_started:false,draft_results:{}}).eq('id',league.id),
+      ...updates,
+    ]);
+  });
+
+  qs('#pay-save',tc)?.addEventListener('click',async()=>{
+    const fee=parseFloat(qs('#pay-fee',tc).value)||0;
+    const venmo=(qs('#pay-venmo',tc).value||'').trim().replace('@','');
+    const note=(qs('#pay-note',tc).value||'').trim();
+    const msg=qs('#pay-msg',tc);
+    const btn=qs('#pay-save',tc);
+    btn.disabled=true;btn.textContent='Saving…';
+    const {error}=await sb.from('leagues').update({entry_fee:fee,venmo,payment_note:note}).eq('id',league.id);
+    if(error){msg.style.color='var(--red)';msg.textContent=error.message;}
+    else{msg.style.color='var(--green)';msg.textContent='✓ Payment settings saved!';}
+    btn.disabled=false;btn.textContent='Save payment settings';
+  });
+
+  qs('#admin-picks-upload',tc)?.addEventListener('click',async()=>{
+    const memberId=qs('#admin-picks-member',tc)?.value;
+    const file=qs('#admin-picks-file',tc)?.files[0];
+    const msg=qs('#admin-picks-msg',tc);
+    const btn=qs('#admin-picks-upload',tc);
+    if(!memberId){msg.style.color='var(--red)';msg.textContent='Select a member first';return}
+    if(!file){msg.style.color='var(--red)';msg.textContent='Select a CSV file first';return}
+
+    const memberName=(members||[]).find(m=>m.id===memberId)?.profiles?.name||'member';
+
+    const reader=new FileReader();
+    reader.onload=async e=>{
+      try{
+        btn.disabled=true;btn.textContent='Uploading…';
+        const lines=e.target.result.trim().split('\n');
+        const dataLines=lines.slice(1).filter(l=>l.trim());
+        if(!dataLines.length) throw new Error('No data rows found');
+
+        const newPicks=Array.from({length:32},(_,i)=>({slot:null,type:'slot',player:'',team:''}));
+        const usedSlots=new Set(), usedPlayers=new Set();
+        let imported=0, errors=[];
+
+        dataLines.forEach((line,li)=>{
+          const cols=line.split(',').map(c=>c.replace(/^"|"$/g,'').trim());
+          const [rowNum,type,slotRaw,team,player]=cols;
+          if(!player) return;
+          const t=(type||'slot').toLowerCase()==='team'?'team':'slot';
+          const slot=parseInt(slotRaw)||null;
+          const rowIdx=parseInt(rowNum)-1;
+          if(rowIdx<0||rowIdx>31){errors.push(`Row ${li+2}: invalid row number`);return}
+          if(t==='slot'&&slot&&usedSlots.has(slot)){errors.push(`Slot #${slot} duplicated`);return}
+          if(usedPlayers.has(player)){errors.push(`"${player}" duplicated`);return}
+          if(t==='slot'&&slot) usedSlots.add(slot);
+          usedPlayers.add(player);
+          newPicks[rowIdx]={type:t,slot:t==='slot'?slot:null,team:t==='team'?(team||''):'',player};
+          imported++;
+        });
+
+        const score=recalcScore(newPicks,league.draft_results||{});
+        const {error}=await sb.from('league_members').update({picks:newPicks,score}).eq('id',memberId);
+        if(error) throw new Error(error.message);
+
+        msg.style.color='var(--green)';
+        msg.textContent=`✓ Uploaded ${imported} picks for ${memberName}${errors.length?` (${errors.length} warnings)`:''}.`;
+        qs('#admin-picks-file',tc).value='';
+        qs('#admin-picks-member',tc).value='';
+      } catch(err){
+        msg.style.color='var(--red)';
+        msg.textContent=`Error: ${err.message}`;
+      } finally{
+        btn.disabled=false;btn.textContent='Upload picks for member';
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  qs('#admin-remove-btn',tc)?.addEventListener('click',async()=>{
+    const memberId=qs('#admin-remove-member',tc)?.value;
+    const msg=qs('#admin-remove-msg',tc);
+    if(!memberId){msg.style.color='var(--red)';msg.textContent='Select a member to remove';return}
+    const memberName=(members||[]).find(m=>m.id===memberId)?.profiles?.name||'this member';
+    if(!confirm(`Remove ${memberName} from the league? Their picks will be deleted and cannot be recovered.`)) return;
+    const {error}=await sb.from('league_members').delete().eq('id',memberId);
+    if(error){msg.style.color='var(--red)';msg.textContent=`Error: ${error.message}`;return}
+    msg.style.color='var(--green)';
+    msg.textContent=`✓ ${memberName} removed from the league.`;
+  });
+    const name=league.name;
+    const typed=prompt(`This will permanently delete "${name}" and all picks. Type the league name to confirm:`);
+    if(typed!==name){alert('League name did not match. Deletion cancelled.');return}
+    await sb.from('leagues').delete().eq('id',league.id);
+    go('home');
+  });
+
+  // Player search typeahead on admin
+  const searchInp=qs('#a-player-search',tc);
+  const searchDrop=qs('#a-player-dropdown',tc);
+  const hiddenVal=qs('#a-player-value',tc);
+
+  const showAdminDropdown=(q)=>{
+    if(!searchInp||!searchDrop) return;
+    const query=(q||'').toLowerCase().trim();
+    const matched=query
+      ? PROSPECTS.filter(p=>p.toLowerCase().includes(query))
+      : PROSPECTS;
+    searchDrop.innerHTML='';
+    matched.slice(0,15).forEach(p=>{
+      const taken=usedPlayers.has(p);
+      const opt=document.createElement('div');
+      opt.style.cssText=`padding:8px 12px;cursor:${taken?'not-allowed':'pointer'};font-size:14px;color:${taken?'var(--muted)':'var(--text)'};display:flex;justify-content:space-between;border-bottom:1px solid var(--border)`;
+      opt.innerHTML=`<span>${p}</span>${taken?'<span style="font-size:11px;color:var(--red)">already drafted</span>':''}`;
+      if(!taken){
+        opt.onmousedown=e=>{e.preventDefault();searchInp.value=p;hiddenVal.value=p;searchDrop.style.display='none'};
+        opt.onmouseenter=()=>opt.style.background='var(--surface2)';
+        opt.onmouseleave=()=>opt.style.background='';
+      }
+      searchDrop.appendChild(opt);
+    });
+    // Write-in
+    if(query){
+      const wi=document.createElement('div');
+      wi.style.cssText='padding:8px 12px;cursor:pointer;font-size:13px;color:var(--accent);border-top:1px solid var(--border)';
+      wi.textContent=`✏ Use "${q}" as write-in`;
+      wi.onmousedown=e=>{e.preventDefault();searchInp.value=q;hiddenVal.value=q;searchDrop.style.display='none'};
+      searchDrop.appendChild(wi);
+    }
+    searchDrop.style.display=matched.length||query?'block':'none';
+  };
+
+  if(searchInp){
+    searchInp.onfocus=()=>showAdminDropdown(searchInp.value);
+    searchInp.oninput=()=>{hiddenVal.value='';showAdminDropdown(searchInp.value)};
+    searchInp.onblur=()=>setTimeout(()=>{if(searchDrop)searchDrop.style.display='none'},150);
+    searchInp.onkeydown=e=>{if(e.key==='Escape')searchDrop.style.display='none'};
+  }
+
+  qs('#a-save',tc)?.addEventListener('click',async()=>{
+    const slot=parseInt(qs('#a-slot',tc)?.value)||0;
+    const player=(hiddenVal?.value||searchInp?.value||'').trim();
+    const team=qs('#a-team',tc)?.value||'';
+    const msg=qs('#a-msg',tc);
+    const btn=qs('#a-save',tc);
+
+    if(!slot||slot<1||slot>32){msg.style.color='var(--red)';msg.textContent='⚠ Select a pick number';return}
+    if(!player){msg.style.color='var(--red)';msg.textContent='⚠ Select or type a player name';return}
+    if(usedPlayers.has(player)){msg.style.color='var(--red)';msg.textContent=`⚠ ${player} has already been drafted`;return}
+    if(results[String(slot)]){msg.style.color='var(--red)';msg.textContent=`⚠ Pick #${slot} already recorded`;return}
+
+    btn.disabled=true; btn.textContent='Saving…';
+
+    // Always store as string key to match Supabase JSONB
+    const newResults={...results,[String(slot)]:{player,team}};
+
+    // Recalc scores for every member
+    const updates=(members||[]).map(m=>({
+      id:m.id,
+      score:recalcScore(m.picks||[],newResults),
+    }));
+
+    // Save league results and ALL member scores simultaneously
+    const allOps=[
+      sb.from('leagues').update({draft_results:newResults}).eq('id',league.id),
+      ...updates.map(u=>sb.from('league_members').update({score:u.score}).eq('id',u.id)),
+    ];
+    const res=await Promise.all(allOps);
+    const errs=res.filter(r=>r.error);
+    if(errs.length){
+      msg.style.color='var(--red)';
+      msg.textContent=`⚠ Error: ${errs[0].error.message}`;
+      btn.disabled=false; btn.textContent='Record pick & update all scores →';
+      return;
+    }
+
+    msg.style.color='var(--green)';
+    msg.textContent=`✓ Pick #${slot}: ${player} recorded! ${updates.length} members' scores updated.`;
+    btn.disabled=false;
+    if(searchInp) searchInp.value='';
+    if(hiddenVal) hiddenVal.value='';
+    if(qs('#a-team',tc)) qs('#a-team',tc).value='';
+  });
+
+  qsa('.del-pick',tc).forEach(btn=>btn.addEventListener('click',async()=>{
+    const slot=btn.dataset.slot;
+    if(!confirm(`Remove pick #${slot}? This will recalculate all scores.`)) return;
+    const newResults={...results};
+    delete newResults[slot];
+    delete newResults[parseInt(slot)];
+    const updates=(members||[]).map(m=>({id:m.id,score:recalcScore(m.picks||[],newResults)}));
+    await Promise.all([
+      sb.from('leagues').update({draft_results:newResults}).eq('id',league.id),
+      ...updates.map(u=>sb.from('league_members').update({score:u.score}).eq('id',u.id)),
+    ]);
+  }));
+}
+
+// ── MAKE PICKS ───────────────────────────────────────────────
+async function screenMakePicks(){
+  if(!currentUser||!currentLeagueId){go('home');return}
+  const [{data:league},{data:myMembership}] = await Promise.all([
+    sb.from('leagues').select('*').eq('id',currentLeagueId).single(),
+    sb.from('league_members').select('*').eq('league_id',currentLeagueId).eq('user_id',currentUser.id).single(),
+  ]);
+  if(!league||!myMembership){go('home');return}
+  if(league.draft_started){go('league');return}
+
+  let picks = myMembership.picks&&myMembership.picks.length===32
+    ? JSON.parse(JSON.stringify(myMembership.picks))
+    : Array.from({length:32},(_,i)=>({slot:null,type:'slot',player:'',team:''}));
+
+  const div=document.createElement('div');
+  root().innerHTML='';root().appendChild(div);
+
+  const renderUI=()=>{
+    const getUsed=(excludeIdx)=>{const u={};picks.forEach((p,i)=>{if(i!==excludeIdx&&p.player)u[p.player]=true});return u};
+
+    div.innerHTML=`
+      <div class="nav">
+        <button class="back-btn" id="back">&#8592;</button>
+        <div style="flex:1">
+          <div style="font-size:18px;font-weight:600">My picks</div>
+          <div style="font-size:12px;color:var(--muted)">${picks.filter(p=>p.player).length}/32 filled</div>
+        </div>
+        <button class="btn" id="clear-all-btn" style="margin-right:6px;font-size:13px;border-color:var(--red);color:var(--red)">✕ Clear all</button>
+        <button class="btn" id="csv-btn" style="margin-right:6px;font-size:13px">📋 CSV</button>
+        <button class="btn" id="autofill-btn" style="margin-right:6px;font-size:13px">⚡ Auto-fill</button>
+        <button class="btn primary" id="save-picks">Save</button>
+      </div>
+      <div class="info-box">
+        <strong>Rules:</strong> Choose <strong>Slot #</strong> (pick number) or <strong>Team</strong> (which team selects them). Each slot # once. Each player once. Unlimited team picks. 1 pt per correct pick. Use <em>Write-in</em> for unlisted players.
+      </div>
+      <div id="autofill-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:flex-start;justify-content:center;padding:60px 16px 16px;overflow-y:auto">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;width:100%;max-width:500px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <div style="font-size:16px;font-weight:600">⚡ Auto-fill from expert mock</div>
+            <button id="modal-close" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer">×</button>
+          </div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Pick an expert's mock to auto-fill all 32 slot picks. Team picks are preserved.</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            ${Object.entries(MOCK_DRAFTS).map(([name,data])=>`
+              <button class="expert-btn" data-expert="${name}" style="text-align:left;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;cursor:pointer;font-family:'Inter',sans-serif">
+                <div style="font-size:14px;font-weight:600;color:var(--text)">${name}</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:3px">${data.desc}</div>
+              </button>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div id="csv-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:flex-start;justify-content:center;padding:60px 16px 16px;overflow-y:auto">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;width:100%;max-width:500px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <div style="font-size:16px;font-weight:600">📋 CSV Import / Export</div>
+            <button id="csv-modal-close" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer">×</button>
+          </div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">
+            Download the template, fill it in with your picks, then upload it back here.<br><br>
+            <strong>Columns:</strong> Row, Type (slot or team), Slot# (1-32 or blank), Team (e.g. LV), Player
+          </div>
+          <button class="btn full" id="csv-download" style="margin-bottom:10px">⬇ Download template (.csv)</button>
+          <button class="btn full" id="csv-download-filled" style="margin-bottom:16px">⬇ Download current picks (.csv)</button>
+          <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px">Upload filled CSV</label>
+          <input type="file" id="csv-upload" accept=".csv" style="font-size:13px;color:var(--text);margin-bottom:10px"/>
+          <div id="csv-msg" style="font-size:13px;min-height:18px;margin-top:4px"></div>
+          <button class="btn primary full" id="csv-import" style="margin-top:10px">Import picks from CSV</button>
+        </div>
+      </div>
+      <div id="picks-list"></div>
+      <div id="picks-err" style="color:var(--red);font-size:13px;margin:8px 0;min-height:18px"></div>
+      <button class="btn primary full" id="save-picks-bottom">Save all picks →</button>
+      <div style="height:20px"></div>
+    `;
+
+    const list=qs('#picks-list',div);
+    picks.forEach((pick,i)=>{
+      const usedByOthers=getUsed(i);
+      const isDupe=pick.player&&usedByOthers[pick.player];
+      const isWriteIn=pick._writein||(pick.player&&!PROSPECTS.includes(pick.player));
+
+      const row=document.createElement('div');
+      row.className='pick-row'+(isDupe?' wrong':'');
+      row.style.cssText='flex-direction:column;gap:6px;padding:10px';
+
+      // ── Row header: number + type toggle ──
+      const rowHeader=document.createElement('div');
+      rowHeader.style.cssText='display:flex;align-items:center;gap:8px;width:100%';
+
+      const slotLabel=document.createElement('span');
+      slotLabel.className='slot-num';slotLabel.textContent=`${i+1}.`;
+      rowHeader.appendChild(slotLabel);
+
+      const typeToggle=document.createElement('div');typeToggle.className='type-toggle';
+      typeToggle.innerHTML=`<button data-t="slot" class="${pick.type==='slot'?'active':''}">Slot #</button><button data-t="team" class="${pick.type==='team'?'active':''}">Team</button>`;
+      typeToggle.querySelectorAll('button').forEach(b=>b.onclick=()=>{picks[i].type=b.dataset.t;picks[i].team='';renderUI()});
+      rowHeader.appendChild(typeToggle);
+
+      // Slot or team selector inline with toggle
+      if(pick.type==='slot'){
+        // Build set of slots used by other slot-type rows
+        const usedSlots=new Set(
+          picks.filter((p,j)=>j!==i&&p.type==='slot'&&p.slot).map(p=>p.slot)
+        );
+        const s=document.createElement('select');
+        s.style.cssText='flex:1;margin-bottom:0;font-size:13px';
+        s.innerHTML=`<option value="">-- pick # --</option>`+Array.from({length:32},(_,j)=>{
+          const n=j+1;
+          const taken=usedSlots.has(n)&&n!==(pick.slot);
+          return `<option value="${n}" ${n===pick.slot?'selected':''} ${taken?'disabled style="color:#555"':''}>${n}${taken?' (taken)':''}</option>`;
+        }).join('');
+        s.value=pick.slot||'';
+        s.onchange=()=>{picks[i].slot=parseInt(s.value)||null;renderUI();};
+        rowHeader.appendChild(s);
+      } else {
+        const s=document.createElement('select');
+        s.style.cssText='flex:1;margin-bottom:0;font-size:13px';
+        s.innerHTML=`<option value="">-- team --</option>`+
+          ALL_NFL_TEAMS_SORTED.map(t=>`<option value="${t.key}" ${pick.team===t.key?'selected':''}>${t.name}</option>`).join('');
+        s.onchange=()=>{picks[i].team=s.value};
+        rowHeader.appendChild(s);
+      }
+      row.appendChild(rowHeader);
+
+      // ── Player search row ──
+      const playerWrap=document.createElement('div');
+      playerWrap.style.cssText='width:100%;display:flex;flex-direction:column;gap:4px;position:relative';
+
+      // Searchable typeahead input (always shown)
+      const searchInp=document.createElement('input');
+      searchInp.type='text';
+      searchInp.placeholder=isWriteIn?'Write-in player name…':'Search players…';
+      searchInp.value=pick.player||'';
+      searchInp.style.cssText='width:100%;margin-bottom:0;font-size:14px;'+(isDupe?'border-color:var(--red)':'');
+      searchInp.autocomplete='off';
+
+      const dropdown=document.createElement('div');
+      dropdown.style.cssText='position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--accent);border-radius:8px;z-index:50;max-height:200px;overflow-y:auto;display:none;box-shadow:0 4px 16px rgba(0,0,0,0.4)';
+
+      const showDropdown=(query)=>{
+        const q=query.toLowerCase().trim();
+        const matched=q?PROSPECTS.filter(p=>p.toLowerCase().includes(q)):PROSPECTS;
+        if(!matched.length&&!q){dropdown.style.display='none';return}
+        dropdown.innerHTML='';
+        matched.slice(0,20).forEach(p=>{
+          const taken=usedByOthers[p];
+          const opt=document.createElement('div');
+          opt.style.cssText=`padding:8px 12px;cursor:${taken?'not-allowed':'pointer'};font-size:14px;color:${taken?'var(--muted)':'var(--text)'};display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)`;
+          opt.innerHTML=`<span>${p}</span>${taken?'<span style="font-size:11px;color:var(--red)">taken</span>':''}`;
+          if(!taken){
+            opt.onmousedown=(e)=>{
+              e.preventDefault();
+              picks[i].player=p;
+              delete pick._writein;
+              searchInp.value=p;
+              dropdown.style.display='none';
+              renderUI();
+            };
+            opt.onmouseenter=()=>opt.style.background='var(--surface2)';
+            opt.onmouseleave=()=>opt.style.background='';
+          }
+          dropdown.appendChild(opt);
+        });
+        // Write-in option at bottom
+        if(q){
+          const writeOpt=document.createElement('div');
+          writeOpt.style.cssText='padding:8px 12px;cursor:pointer;font-size:13px;color:var(--accent);border-top:1px solid var(--border)';
+          writeOpt.textContent=`✏ Use "${query}" as write-in`;
+          writeOpt.onmousedown=(e)=>{
+            e.preventDefault();
+            picks[i].player=query;
+            pick._writein=true;
+            searchInp.value=query;
+            dropdown.style.display='none';
+            renderUI();
+          };
+          dropdown.appendChild(writeOpt);
+        }
+        dropdown.style.display='block';
+      };
+
+      searchInp.onfocus=()=>showDropdown(searchInp.value);
+      searchInp.oninput=()=>{
+        picks[i].player=searchInp.value;
+        const u=getUsed(i);
+        searchInp.style.borderColor=searchInp.value&&u[searchInp.value]?'var(--red)':'';
+        showDropdown(searchInp.value);
+      };
+      searchInp.onblur=()=>{ setTimeout(()=>{dropdown.style.display='none';},150); };
+      searchInp.onkeydown=(e)=>{
+        if(e.key==='Escape'){dropdown.style.display='none';searchInp.blur();}
+        if(e.key==='Enter'){
+          const first=dropdown.querySelector('div');
+          if(first) first.onmousedown&&first.onmousedown(e);
+        }
+      };
+
+      playerWrap.appendChild(searchInp);
+      playerWrap.appendChild(dropdown);
+
+      if(isDupe){
+        const d=document.createElement('div');
+        d.style.cssText='font-size:11px;color:var(--red)';
+        d.textContent='⚠ Player already used in another row';
+        playerWrap.appendChild(d);
+      }
+      row.appendChild(playerWrap);
+
+      // Clear button — only show if row has any data
+      if(pick.player||pick.slot||pick.team){
+        const clearBtn=document.createElement('button');
+        clearBtn.textContent='✕ Clear';
+        clearBtn.style.cssText='background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:0;text-align:left;width:fit-content;margin-top:2px';
+        clearBtn.onmouseenter=()=>clearBtn.style.color='var(--red)';
+        clearBtn.onmouseleave=()=>clearBtn.style.color='var(--muted)';
+        clearBtn.onclick=()=>{
+          picks[i].player='';
+          picks[i].slot=null;
+          picks[i].team='';
+          delete picks[i]._writein;
+          renderUI();
+        };
+        row.appendChild(clearBtn);
+      }
+
+      list.appendChild(row);
+    });
+
+    const doSave=async()=>{
+      const err=qs('#picks-err',div);
+      const usedP={},usedS={};let valid=true,errMsg='';
+      for(let i=0;i<picks.length;i++){
+        const p=picks[i];const playerName=(p.player||'').trim();
+        if(!playerName){errMsg=`Row ${i+1}: select or write in a player`;valid=false;break}
+        if(p.type==='team'&&!p.team){errMsg=`Row ${i+1}: select a team`;valid=false;break}
+        if(usedP[playerName]){errMsg=`"${playerName}" selected more than once`;valid=false;break}
+        usedP[playerName]=true;
+        if(p.type==='slot'){
+          if(!p.slot){errMsg=`Row ${i+1}: select a pick number`;valid=false;break}
+          if(usedS[p.slot]){errMsg=`Pick #${p.slot} used more than once`;valid=false;break}
+          usedS[p.slot]=true;
+        }
+      }
+      if(!valid){err.textContent=errMsg;err.scrollIntoView({behavior:'smooth',block:'nearest'});return}
+      picks.forEach(p=>{p.player=(p.player||'').trim()});
+      const btn=qs('#save-picks',div);btn.disabled=true;btn.textContent='Saving…';
+      const {error}=await sb.from('league_members').update({picks}).eq('league_id',currentLeagueId).eq('user_id',currentUser.id);
+      if(error){err.textContent=error.message;btn.disabled=false;btn.textContent='Save';return}
+      go('league');
+    };
+
+    // Autofill modal
+    const modal=qs('#autofill-modal',div);
+    qs('#clear-all-btn',div).onclick=()=>{
+      if(!confirm('Clear all 32 picks and start over?')) return;
+      picks.forEach(p=>{p.player='';p.slot=null;p.team='';delete p._writein;});
+      renderUI();
+    };
+
+    // CSV modal
+    const csvModal=qs('#csv-modal',div);
+    qs('#csv-btn',div).onclick=()=>{csvModal.style.display='flex'};
+    qs('#csv-modal-close',div).onclick=()=>{csvModal.style.display='none'};
+    csvModal.onclick=e=>{if(e.target===csvModal)csvModal.style.display='none'};
+
+    const makeCSV=(data)=>{
+      const rows=[['Row','Type','Slot#','Team','Player'],...data];
+      return rows.map(r=>r.map(v=>`"${(v??'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+    };
+    const downloadCSV=(content,filename)=>{
+      const a=document.createElement('a');
+      a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(content);
+      a.download=filename;a.click();
+    };
+
+    qs('#csv-download',div).onclick=()=>{
+      const rows=Array.from({length:32},(_,i)=>[i+1,'slot','','','']);
+      downloadCSV(makeCSV(rows),'picks_template.csv');
+    };
+
+    qs('#csv-download-filled',div).onclick=()=>{
+      const rows=picks.map((p,i)=>[
+        i+1,
+        p.type||'slot',
+        p.type==='slot'?(p.slot||''):'',
+        p.type==='team'?(p.team||''):'',
+        p.player||'',
+      ]);
+      downloadCSV(makeCSV(rows),'my_picks.csv');
+    };
+
+    qs('#csv-import',div).onclick=()=>{
+      const file=qs('#csv-upload',div).files[0];
+      const msgEl=qs('#csv-msg',div);
+      if(!file){msgEl.style.color='var(--red)';msgEl.textContent='Select a CSV file first';return}
+      const reader=new FileReader();
+      reader.onload=e=>{
+        try{
+          const lines=e.target.result.trim().split('\n');
+          const dataLines=lines.slice(1).filter(l=>l.trim()); // skip header
+          if(dataLines.length<1){throw new Error('No data rows found')}
+          const usedSlots=new Set(), usedPlayers=new Set();
+          let imported=0, errors=[];
+          dataLines.forEach((line,li)=>{
+            // Parse CSV row (handle quoted fields)
+            const cols=line.match(/(".*?"|[^,]+|(?<=,)(?=,)|^(?=,)|(?<=,)$)/g)
+              ||(line+',').match(/(?:"([^"]*)"|([^,]*)),/g).map(s=>s.replace(/,$/,'').replace(/^"|"$/g,''));
+            const clean=cols.map(c=>(c||'').replace(/^"|"$/g,'').trim());
+            const [rowNum,type,slotRaw,team,player]=clean;
+            if(!player) return; // skip empty rows
+            const t=(type||'slot').toLowerCase()==='team'?'team':'slot';
+            const slot=parseInt(slotRaw)||null;
+            const rowIdx=parseInt(rowNum)-1;
+            if(rowIdx<0||rowIdx>31){errors.push(`Row ${li+2}: invalid row number`);return}
+            if(t==='slot'&&slot){
+              if(usedSlots.has(slot)){errors.push(`Row ${li+2}: slot #${slot} duplicated`);return}
+              usedSlots.add(slot);
+            }
+            if(usedPlayers.has(player)){errors.push(`Row ${li+2}: "${player}" duplicated`);return}
+            usedPlayers.add(player);
+            picks[rowIdx]={...picks[rowIdx],type:t,slot:t==='slot'?slot:null,team:t==='team'?team:'',player,_writein:!PROSPECTS.includes(player)};
+            imported++;
+          });
+          if(errors.length){
+            msgEl.style.color='var(--amber)';
+            msgEl.textContent=`Imported ${imported} picks with ${errors.length} warning(s): ${errors[0]}`;
+          } else {
+            msgEl.style.color='var(--green)';
+            msgEl.textContent=`✓ Imported ${imported} picks successfully`;
+          }
+          setTimeout(()=>{csvModal.style.display='none';renderUI();},1200);
+        } catch(err){
+          msgEl.style.color='var(--red)';
+          msgEl.textContent=`Error parsing CSV: ${err.message}`;
+        }
+      };
+      reader.readAsText(file);
+    };
+
+    qs('#autofill-btn',div).onclick=()=>{modal.style.display='flex'};
+    qs('#modal-close',div).onclick=()=>{modal.style.display='none'};
+    modal.onclick=e=>{if(e.target===modal)modal.style.display='none'};
+    qsa('.expert-btn',div).forEach(btn=>{
+      btn.onmouseenter=()=>{btn.style.borderColor='var(--accent)'};
+      btn.onmouseleave=()=>{btn.style.borderColor='var(--border)'};
+      btn.onclick=()=>{
+        const mock=MOCK_DRAFTS[btn.dataset.expert];if(!mock)return;
+        const usedPlayers=new Set();
+        let filled=0;
+        picks.forEach((p,i)=>{
+          const player=mock.picks[i]||'';
+          const team=mock.teams&&mock.teams[i]||'';
+          if(!player){
+            // leave empty rows blank
+            p.player=''; p.type='team'; p.team=''; delete p._writein;
+            return;
+          }
+          if(usedPlayers.has(player)){
+            // skip duplicate (shouldn't happen with valid mock data)
+            p.player=''; p.type='team'; p.team=''; delete p._writein;
+            return;
+          }
+          usedPlayers.add(player);
+          p.player=player;
+          p.type='team';
+          p.team=team;
+          delete p._writein;
+          filled++;
+        });
+        modal.style.display='none';renderUI();
+        const e=qs('#picks-err',div);
+        if(e){e.style.color='var(--green)';e.textContent=`✓ Auto-filled ${filled} team picks from ${btn.dataset.expert}`;setTimeout(()=>{if(e){e.style.color='var(--red)';e.textContent=''}},3000)}
+      };
+    });
+
+    qs('#back',div).onclick=()=>go('league');
+    qs('#save-picks',div).onclick=doSave;
+    qs('#save-picks-bottom',div).onclick=doSave;
+  };
+
+  renderUI();
+}
+
+// ── Start ───────────────────────────────────────────────────
+boot();
+</script>
+</body>
+</html>
