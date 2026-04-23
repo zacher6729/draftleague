@@ -1351,13 +1351,28 @@ function renderAdmin(tc,league,members){
   qs('#admin-remove-btn',tc)?.addEventListener('click',async()=>{
     const memberId=qs('#admin-remove-member',tc)?.value;
     const msg=qs('#admin-remove-msg',tc);
+    const btn=qs('#admin-remove-btn',tc);
     if(!memberId){msg.style.color='var(--red)';msg.textContent='Select a member to remove';return}
-    const memberName=(members||[]).find(m=>m.id===memberId)?.profiles?.name||'this member';
+    const member=(members||[]).find(m=>m.id===memberId);
+    const memberName=member?.profiles?.name||'this member';
+    const memberEmail=member?.profiles?.email||'';
     if(!confirm(`Remove ${memberName} from the league? Their picks will be deleted and cannot be recovered.`)) return;
-    const {error}=await sb.from('league_members').delete().eq('id',memberId);
-    if(error){msg.style.color='var(--red)';msg.textContent=`Error: ${error.message}`;return}
+    btn.disabled=true; btn.textContent='Removing…';
+    // Delete league_members row
+    const {error}=await sb.from('league_members').delete().eq('id',memberId).eq('league_id',league.id);
+    if(error){
+      msg.style.color='var(--red)';
+      msg.textContent=`Error: ${error.message}`;
+      btn.disabled=false; btn.textContent='Remove member from league';
+      return;
+    }
+    // Also remove any pending invite so they can be re-invited fresh
+    if(memberEmail){
+      await sb.from('invites').delete().eq('league_id',league.id).eq('email',memberEmail);
+    }
     msg.style.color='var(--green)';
-    msg.textContent=`✓ ${memberName} removed from the league.`;
+    msg.textContent=`✓ ${memberName} removed. Refreshing…`;
+    setTimeout(()=>screenLeague(), 1000);
   });
 
   qs('#delete-league',tc)?.addEventListener('click',async()=>{
