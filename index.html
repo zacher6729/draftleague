@@ -1331,8 +1331,15 @@ function renderAdmin(tc,league,members){
         });
 
         const score=recalcScore(newPicks,league.draft_results||{});
-        const {error}=await sb.from('league_members').update({picks:newPicks,score}).eq('id',memberId);
+        console.log('Saving picks for member:', memberId, 'picks:', newPicks.filter(p=>p.player).length, 'score:', score);
+        const {data, error}=await sb.from('league_members')
+          .update({picks:newPicks, score})
+          .eq('id', memberId)
+          .eq('league_id', league.id)
+          .select();
+        console.log('Update result:', data, error);
         if(error) throw new Error(error.message);
+        if(!data||data.length===0) throw new Error('No rows updated — check RLS permissions. Run the admin_picks_policy.sql in Supabase.');
 
         msg.style.color='var(--green)';
         msg.textContent=`✓ Uploaded ${imported} picks for ${memberName}${errors.length?` (${errors.length} warnings)`:''}.`;
