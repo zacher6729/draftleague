@@ -1359,6 +1359,8 @@ function renderAdmin(tc,league,members){
     msg.style.color='var(--green)';
     msg.textContent=`✓ ${memberName} removed from the league.`;
   });
+
+  qs('#delete-league',tc)?.addEventListener('click',async()=>{
     const name=league.name;
     const typed=prompt(`This will permanently delete "${name}" and all picks. Type the league name to confirm:`);
     if(typed!==name){alert('League name did not match. Deletion cancelled.');return}
@@ -1771,10 +1773,9 @@ async function screenMakePicks(){
           const usedSlots=new Set(), usedPlayers=new Set();
           let imported=0, errors=[];
           dataLines.forEach((line,li)=>{
-            // Parse CSV row (handle quoted fields)
-            const cols=line.match(/(".*?"|[^,]+|(?<=,)(?=,)|^(?=,)|(?<=,)$)/g)
-              ||(line+',').match(/(?:"([^"]*)"|([^,]*)),/g).map(s=>s.replace(/,$/,'').replace(/^"|"$/g,''));
-            const clean=cols.map(c=>(c||'').replace(/^"|"$/g,'').trim());
+            // Simple CSV parser - split on commas, strip quotes
+            const cols=line.split(',').map(c=>c.replace(/^"|"$/g,'').trim());
+            const clean=cols;
             const [rowNum,type,slotRaw,team,player]=clean;
             if(!player) return; // skip empty rows
             const t=(type||'slot').toLowerCase()==='team'?'team':'slot';
